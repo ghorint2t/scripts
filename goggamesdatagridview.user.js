@@ -7,6 +7,7 @@
 // @grant     GM_addStyle
 // @match     https://www.gog.com/games*
 // @require   https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
+// @run-at    document-start
 // ==/UserScript==
 
 var uigrid = `
@@ -1165,7 +1166,21 @@ input[type="text"].ui-grid-filter-input { padding-right: 14px; }
 .datagrid-ms svg { width: 1em; height: 1em; margin: 0; margin-top: 0.15em; margin-bottom: -0.25em;}
 `;
 
-unsafeWindow.eval(uigrid+uims+gridctrl);
-GM_addStyle(uigridcss);
-GM_addStyle(uimscss);
-GM_addStyle(gridctrlcss);
+new MutationObserver(function(mlist, ob)
+{
+    for(let mut of mlist)
+    for(let n of mut.addedNodes)
+    {
+        if(n.nodeName == 'SCRIPT' && n.getAttribute('src') && n.getAttribute('src').match('jsGlobal'))
+        {
+            n.addEventListener("load", function()
+            {
+				unsafeWindow.eval(uigrid+uims+gridctrl);
+				GM_addStyle(uigridcss);
+				GM_addStyle(uimscss);
+				GM_addStyle(gridctrlcss);
+                ob.disconnect();
+            }, false);
+        }
+    }
+}).observe(document,{ attributes: true, childList: true, subtree: true });
