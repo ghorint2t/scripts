@@ -33,6 +33,7 @@ This user script adds a third way to display games in the store view at [https:/
   * operator-value pairs, eg. discount ">=75", price "<10"
 - For the price filter, the 0.01 rounding is taken into account when filtering, eg. both "10" and ">=10" filters will include 9.99 priced games.
 - TBA games have their price internally set to -1 for purposes of sorting and filtering. Use "0.1-10" range filter instead of "<10" operator filter if you want to exclude free/TBA games from your searches (doesn't affect 'On Sale' tab, as free/TBA games are never discounted).
+- Thumbnail images can be turned on from 'Title' column's menu
 
 ## Example filters
 
@@ -47,6 +48,9 @@ The golden age of adventures:
 
 Bestselling rank checking:
 ![](https://github.com/ghorint2t/scripts/raw/master/doc/img/rank_checking.jpg "Rank checking")
+
+Thumbnail images:
+![](https://github.com/ghorint2t/scripts/raw/master/doc/img/colors.jpg "Colors")
 
 ## Notes
 
