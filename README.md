@@ -46,7 +46,7 @@ The golden age of adventures:
 ![](https://github.com/ghorint2t/scripts/raw/master/doc/img/the_golden_age.jpg "Range filter")
 
 Bestselling rank checking:
-![](https://github.com/ghorint2t/scripts/raw/master/doc/img/cheap_games.jpg "Rank checking")
+![](https://github.com/ghorint2t/scripts/raw/master/doc/img/rank_checking.jpg "Rank checking")
 
 ## Notes
 
