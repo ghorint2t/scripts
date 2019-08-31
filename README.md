@@ -32,7 +32,7 @@ This user script adds a third way to display games in the store view at [https:/
   * a range of numbers (including both ends), eg. years "1990-2000"
   * operator-value pairs, eg. discount ">=75", price "<10"
 - For the price filter, the 0.01 rounding is taken into account when filtering, eg. both "10" and ">=10" filters will include 9.99 priced games.
-- TBA games have their price internally set to -1 for purposes of sorting and filtering. Use "0.1-10" range filter instead of "<10" operator filter if you want to exclude the free/TBA games from your searches (doesn't affects the 'On Sale' tab, as free/TBA games are never discounted).
+- TBA games have their price internally set to -1 for purposes of sorting and filtering. Use "0.1-10" range filter instead of "<10" operator filter if you want to exclude free/TBA games from your searches (doesn't affect 'On Sale' tab, as free/TBA games are never discounted).
 
 ## Example filters
 
@@ -50,7 +50,7 @@ Bestselling rank checking:
 
 ## Notes
 
-It is possible for the catalog data download to cause the infamous 'wrong gog_lc cookie' (aka. 'Why my gog page is now in different language/currency?!?') bug. If that happens, add something to cart, go to checkout and back to fix. Or, if you are savvy with your browser's developer tools, manually edit gog_lc cookie to a correct value.
+It is possible for the catalogue data download to cause the infamous 'wrong gog_lc cookie' (aka. 'Why my gog page is now in different language/currency?!?') bug. If that happens, add something to cart, go to checkout and back to fix. Or, if you are savvy with your browser's developer tools, manually edit gog_lc cookie to a correct value.
 
 ## Installation
 
