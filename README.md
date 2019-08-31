@@ -8,17 +8,17 @@ This user script adds a third way to display games in the store view at [https:/
 
 ## Features
 
-- Displays all the games in a single grid (no more pages!)
+- Displays all games in a single grid (no more pages!)
 - Sorting and filtering by (in any combination):
- - Bestselling rank
- - Title
- - Sub-genres
- - Developer/publisher
- - Release year
- - Operating system(s)
- - User rating
- - Discount
- - Current price
+  * Bestselling rank
+  * Title
+  * Sub-genres
+  * Developer/publisher
+  * Release year
+  * Operating system(s)
+  * User rating
+  * Discount
+  * Current price
 - Option to filter out DLCs
 - Option to filter out owned games
 - Integration with wishlist/cart from the store
@@ -28,11 +28,11 @@ This user script adds a third way to display games in the store view at [https:/
 - The game rank comes from 'all-time bestselling' list
 - Genre filters support both limiting the search to certain sub-genres, or excluding them from the results. In both cases, multiple genres can be selected in either OR (default) or AND mode.
 - Numeric filters (rank, year, rating, discount, price) support the following values:
- - a single specific number, eg. year "1995"
- - a range of numbers (including both ends), eg. years "1990-2000"
- - operator-value pairs, eg. discount ">=75", price "<10"
+  * a single specific number, eg. year "1995"
+  * a range of numbers (including both ends), eg. years "1990-2000"
+  * operator-value pairs, eg. discount ">=75", price "<10"
 - For the price filter, the 0.01 rounding is taken into account when filtering, eg. both "10" and ">=10" filters will include 9.99 priced games.
-- TBA games have their price internally set to -1 for purposes of sorting and filtering. Use "0.1-10" range filter instead of operator "<10" filter if you want to exclude the free/TBA games from your searches (doesn't affects the 'On Sale' tab, as free/TBA games are never discounted).
+- TBA games have their price internally set to -1 for purposes of sorting and filtering. Use "0.1-10" range filter instead of "<10" operator filter if you want to exclude the free/TBA games from your searches (doesn't affects the 'On Sale' tab, as free/TBA games are never discounted).
 
 ## Example filters
 
