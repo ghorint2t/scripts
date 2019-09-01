@@ -1,8 +1,11 @@
 // ==UserScript==
 // @name      GOG Games data grid view
 // @namespace https://github.com/ghorint2t/scripts/
-// @description Adds 'data grid' view to GOG store page, allowing multiple filtering and sorting options.
-// @version   1
+// @description Adds 'data grid' view to GOG store page, allowing multiple filtering and sorting options. This is the TamperMonkey version.
+// @author       Ghorin
+// @updateURL    https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
+// @downloadURL  https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
+// @version   2
 // @grant     unsafeWindow
 // @grant     GM_addStyle
 // @match     https://www.gog.com/games*
@@ -1098,6 +1101,9 @@ angular.module('gog').requires.push('ui.grid.autoResize');
 angular.module('gog').requires.push('ui.grid.resizeColumns');
 angular.module('gog').requires.push('ui.multiselect');
 
+// waterfox/old ff
+if(!Array.prototype.flat)
+	Array.prototype.flat = function() { return Array.concat.apply(Array, this); }
 
 `;
 
