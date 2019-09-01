@@ -5,7 +5,7 @@
 // @author       Ghorin
 // @updateURL    https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
 // @downloadURL  https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
-// @version   2
+// @version   3
 // @grant     unsafeWindow
 // @grant     GM_addStyle
 // @match     https://www.gog.com/games*
@@ -1104,6 +1104,9 @@ angular.module('gog').requires.push('ui.multiselect');
 // waterfox/old ff
 if(!Array.prototype.flat)
 	Array.prototype.flat = function() { return Array.concat.apply(Array, this); }
+
+// about menu
+angular.element(document.querySelector("div[hook-test='menuAbout'] .js-menu")).append('<div class="menu-submenu-item menu-submenu-item--hover"><a href="https://github.com/ghorint2t/scripts" class="menu-submenu-link" target="_blank">Games data grid view</a></div>');
 
 `;
 
