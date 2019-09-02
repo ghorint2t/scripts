@@ -5,7 +5,7 @@
 // @author       Ghorin
 // @updateURL    https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
 // @downloadURL  https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
-// @version   3
+// @version   4
 // @grant     unsafeWindow
 // @grant     GM_addStyle
 // @match     https://www.gog.com/games*
@@ -1108,6 +1108,22 @@ if(!Array.prototype.flat)
 // about menu
 angular.element(document.querySelector("div[hook-test='menuAbout'] .js-menu")).append('<div class="menu-submenu-item menu-submenu-item--hover"><a href="https://github.com/ghorint2t/scripts" class="menu-submenu-link" target="_blank">Games data grid view</a></div>');
 
+// full width switch
+\$switch.css('left', '20px');
+var \$cfs = angular.element(document.querySelector('.catalog__filters-sorting'));
+\$cfs.css('width','calc(100% - 20px)');
+\$cfs.append(\`
+<svg class="expand_button" ng-show="!cat_expanded" ng-click="cat_expanded=!cat_expanded;catalog.\$window.dgCont.grid.refreshCanvas()" width="16" height="14" viewBox="0 0 50 40" preserveAspectRatio="xMidYMid meet">
+<title>Expand to full screen width</title>
+<polygon points="0,0 10,0 30,20 10,40 0,40 20,20"></polygon>
+<polygon points="20,0 30,0 50,20 30,40 20,40 40,20"></polygon>
+</svg>
+<svg class="expand_button" ng-show="cat_expanded" ng-click="cat_expanded=!cat_expanded;catalog.\$window.dgCont.grid.refreshCanvas()" width="16" height="14" viewBox="0 0 50 40" preserveAspectRatio="xMidYMid meet">
+<title>Shrink back to screen center</title>
+<polygon points="50,0 40,0 20,20 40,40 50,40 30,20"></polygon>
+<polygon points="30,0 20,0 0,20 20,40 30,40 10,20"></polygon>
+</svg>\`);
+angular.element(document.querySelectorAll('.container--catalog')).attr('ng-class', "{'catalog-expanded': cat_expanded}");
 `;
 
 var gridctrlcss = `
@@ -1173,6 +1189,10 @@ input[type="text"].ui-grid-filter-input { padding-right: 14px; }
 .ui-ms-icon-remove::before { font-family:'gog-icons';content:'\\f00d';}
 .datagrid-ms { font-size: 0.9em; width:calc(100% - 12px); }
 .datagrid-ms svg { width: 1em; height: 1em; margin: 0; margin-top: 0.15em; margin-bottom: -0.25em;}
+.expand_button { width:16px; height:14px; fill:#595959; position:absolute; right:-20px; bottom:-7px; z-index:10; }
+.expand_button:hover { fill: #78387b; }
+.catalog-expanded {max-width:initial !important;}
+
 `;
 
 new MutationObserver(function(mlist, ob)
