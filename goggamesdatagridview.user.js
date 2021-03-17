@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name      GOG Games data grid view
 // @namespace https://github.com/ghorint2t/scripts/
-// @description Adds 'data grid' view to GOG store page, allowing multiple filtering and sorting options. This is the TamperMonkey version.
+// @description Adds 'data grid' view to GOG store page, allowing multiple filtering and sorting options. 
 // @author       Ghorin
 // @updateURL    https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
 // @downloadURL  https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
