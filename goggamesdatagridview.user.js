@@ -5,7 +5,7 @@
 // @author       Ghorin
 // @updateURL    https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
 // @downloadURL  https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
-// @version   4
+// @version   5
 // @grant     unsafeWindow
 // @grant     GM_addStyle
 // @match     https://www.gog.com/games*
@@ -665,8 +665,8 @@ ng-if="row.entity.new">New!</span></a></div>\` )),
 				],
 				width: 135, 
 				cellTemplate: 
-\`<div class="ui-grid-cell-contents datagrid-genre" title="TOOLTIP"><div/><span
->{{COL_FIELD CUSTOM_FILTERS}}</span><div/></div>\`, 
+\`<div class="ui-grid-cell-contents datagrid-genre" title="TOOLTIP"><div></div><span
+>{{COL_FIELD CUSTOM_FILTERS}}</span><div></div></div>\`, 
 				filterHeaderTemplate:
 \`<div class="ui-grid-filter-container" ng-style="col.extraStyle" 
 ng-repeat="colFilter in col.filters" 
@@ -751,7 +751,7 @@ class="product-tile__discount" href="{{row.entity.promoStr}}" ng-if="row.entity.
 				filter: {condition:(t,v)=>nf(t,v,true)}, 
 				width: 120, 
 				cellTemplate: 
-\`<div class="ui-grid-cell-contents datagrid-price" title="TOOLTIP"><div><div/><span 
+\`<div class="ui-grid-cell-contents datagrid-price" title="TOOLTIP"><div><div></div><span 
 ng-if="row.entity.bonusStr" class="bon">{{row.entity.bonusStr}}</span><span 
 ng-if="row.entity.discount" class="bp">{{row.entity.basePriceStr}}</span></div><span
 ng-class="{free: row.entity.price.isFree || !row.entity.isPriceVisible}">{{row.entity.priceStr}}</span></div>\`
