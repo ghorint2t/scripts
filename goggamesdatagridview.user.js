@@ -5,7 +5,7 @@
 // @author       Ghorin
 // @updateURL    https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
 // @downloadURL  https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
-// @version   5
+// @version   6
 // @grant     unsafeWindow
 // @grant     GM_addStyle
 // @match     https://www.gog.com/games*
@@ -1046,15 +1046,15 @@ DataGridController.prototype.toggleCart = function(entry)
 	if(entry.inCart)
 		this.cart.remove(entry.id);
 	else
-		this.cart.add(entry.id);
+		this.cart.add(entry.id.toString());
 }
 
 DataGridController.prototype.toggleWishlist = function(entry)
 {
 	if(entry.inWishlist)
-		this.wishlist.remove(entry.id)
+		this.wishlist.remove(entry.id.toString())
 	else
-		this.wishlist.add(entry.id);
+		this.wishlist.add(entry.id.toString());
 }
 
 DataGridController.prototype.cartUpdate = function(data)
