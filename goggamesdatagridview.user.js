@@ -5,7 +5,7 @@
 // @author       Ghorin
 // @updateURL    https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
 // @downloadURL  https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
-// @version   7
+// @version   8
 // @grant     unsafeWindow
 // @grant     GM_addStyle
 // @match     https://www.gog.com/games*
@@ -594,6 +594,34 @@ for(let c of ['.catalog__games-list','.catalog__sidebar','.catalog__search-conta
 
 var dgCont;
 
+var storage = {
+	data: undefined,
+	set: function(key, value) 
+	{
+		if(!this.data)
+			this.data = {};
+		this.data[key] = value;
+	},
+
+	get: function(key)
+	{
+		if(!this.data)
+			this.data = {};
+		return this.data[key];
+	},
+
+	save: function()
+	{
+		window.localStorage['goggrid'] = JSON.stringify(this.data);
+	},
+
+	restore: function()
+	{
+		var v = window.localStorage['goggrid'];
+		this.data = v ? JSON.parse(v) : {};
+	},
+};
+
 function DataGridController(\$scope, \$http, \$window, cart, wishlist)
 {
 	var me = this;
@@ -621,6 +649,19 @@ function DataGridController(\$scope, \$http, \$window, cart, wishlist)
 		minRowsToShow: 15,
 		enableGridMenu: true,
 		enableFiltering: true,
+		gridMenuCustomItems: [ {
+			title: 'Reset column widths',
+			action: () => {
+				for(let col of this.grid.columns)
+				{
+					col.width = col.colDef.origWidth || "*";
+					col.colDef.width = col.colDef.origWidth;
+					this.saveData();
+					this.grid.refresh();
+				}
+			},
+			context: \$scope
+		  } ],
 		columnDefs: [ {
 				name: 'rank', 
 				shortDisplayName: '#', 
@@ -814,7 +855,13 @@ DataGridController.prototype.start = async function()
 
 	this.fullData = allGames;
 	this.baseVisibility();
+
+	this.restoreData();
 	this.grid.refresh();
+
+	this.grid.api.core.on.filterChanged(this.\$scope, this.saveData.bind(this));
+	this.grid.api.core.on.columnVisibilityChanged(this.\$scope, this.saveData.bind(this));
+	this.grid.api.colResizable.on.columnSizeChanged(this.\$scope, this.saveData.bind(this));
 };
 
 DataGridController.prototype.getGames = async function(url)
@@ -1086,6 +1133,41 @@ DataGridController.prototype.setsEqual = function(s1, s2)
 	return true;
 }
 
+DataGridController.prototype.saveData = function()
+{
+	for(let c of this.grid.columns)
+	{
+		if(c.filters)
+			storage.set(c.name+'_filter', c.filters.map(f=>f.term));
+		storage.set(c.name+'_width', c.width);
+		storage.set(c.name+'_vis', c.visible);
+	}
+	storage.set('expanded', this.\$scope.\$parent.cat_expanded || false);
+	storage.save();
+};
+
+DataGridController.prototype.restoreData = function()
+{
+	storage.restore();
+	for(let c of this.grid.columns)
+	{
+		c.colDef.origWidth = c.colDef.width;
+		let i = 0, v;
+		for(let ft of storage.get(c.name+'_filter') || [])
+			if(c.filters[i])
+				c.filters[i++].term = ft;
+		if((v = storage.get(c.name+'_vis')) !== undefined)
+			if(v)
+				c.showColumn();
+			else
+				c.hideColumn();
+		if((v = storage.get(c.name+'_width')) !== undefined)
+			c.colDef.width = c.width = v;
+	}
+	if(this.\$scope.\$parent.cat_expanded = storage.get('expanded'))
+		this.grid.refreshCanvas();
+};
+
 startDatagrid = function(\$scope)
 {
 	\$scope.viewSwitcher.activeView = 'datagrid';
@@ -1111,12 +1193,12 @@ angular.element(document.querySelector("div[hook-test='menuAbout'] .js-menu")).a
 var \$cfs = angular.element(document.querySelector('.catalog__filters-sorting'));
 \$cfs.css('width','calc(100% - 20px)');
 \$cfs.append(\`
-<svg class="expand_button" ng-show="!cat_expanded" ng-click="cat_expanded=!cat_expanded;catalog.\$window.dgCont.grid.refreshCanvas()" width="16" height="14" viewBox="0 0 50 40" preserveAspectRatio="xMidYMid meet">
+<svg class="expand_button" ng-show="!cat_expanded" ng-click="cat_expanded=!cat_expanded;catalog.\$window.dgCont.saveData();catalog.\$window.dgCont.grid.refreshCanvas()" width="16" height="14" viewBox="0 0 50 40" preserveAspectRatio="xMidYMid meet">
 <title>Expand to full screen width</title>
 <polygon points="0,0 10,0 30,20 10,40 0,40 20,20"></polygon>
 <polygon points="20,0 30,0 50,20 30,40 20,40 40,20"></polygon>
 </svg>
-<svg class="expand_button" ng-show="cat_expanded" ng-click="cat_expanded=!cat_expanded;catalog.\$window.dgCont.grid.refreshCanvas()" width="16" height="14" viewBox="0 0 50 40" preserveAspectRatio="xMidYMid meet">
+<svg class="expand_button" ng-show="cat_expanded" ng-click="cat_expanded=!cat_expanded;catalog.\$window.dgCont.saveData();catalog.\$window.dgCont.grid.refreshCanvas()" width="16" height="14" viewBox="0 0 50 40" preserveAspectRatio="xMidYMid meet">
 <title>Shrink back to screen center</title>
 <polygon points="50,0 40,0 20,20 40,40 50,40 30,20"></polygon>
 <polygon points="30,0 20,0 0,20 20,40 30,40 10,20"></polygon>

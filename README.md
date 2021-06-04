@@ -22,6 +22,7 @@ This user script adds a third way to display games in the store view at [https:/
 - Option to filter out DLCs
 - Option to filter out owned games
 - Integration with wishlist/cart from the store
+- Grid state (column widths, visibility and filters) are saved in browser local storage
 
 ## Details
 
