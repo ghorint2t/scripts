@@ -631,6 +631,7 @@ function DataGridController(\$scope, \$http, \$window, cart, wishlist)
 	this.wishlist = wishlist;
 	this.cartSet = new Set();
 	this.wishlistSet = new Set();
+	this.showImages = false;
 	\$window.gogEventBus.subscribe('cart', 'updated', this.cartUpdate.bind(this));
 	\$window.gogEventBus.subscribe('wishlist', 'updated', this.wishlistUpdate.bind(this));
 
@@ -686,12 +687,7 @@ ng-if="row.entity.isComingSoon">SOON</span><span class="datagrid-title-mod new"
 ng-if="row.entity.new">New!</span></a></div>\` )),
 				 menuItems: [ {
 		            title: 'Show thumbnail images',
-		            action: function(\$event)
-					{
-						me.showImages = !me.showImages;
-						this.context.col.menuItems[0].icon = !me.showImages ? 'ui-grid-icon-blank' : 'ui-grid-icon-ok';
-						me.baseVisibility();
-					},
+		            action: this.toggleImages.bind(this),
 					icon: 'ui-grid-icon-blank',
 		            context: \$scope
 		          } ],
@@ -823,8 +819,6 @@ ng-class="{ 'ui-grid-row-header-cell': col.isRowHeader }"
 role="{{col.isRowHeader ? 'rowheader' : 'gridcell'}}" ui-grid-cell></div></div>\`,
 	};
 	\$scope.dgOptions.columnDefs.forEach(d=>d.headerCellTemplate = hdrTempl.replace("##HDR##",d.shortDisplayName)); 
-	\$scope.\$watch('dg.hideDLC', this.baseVisibility.bind(this));
-	\$scope.\$watch('dg.hideOwned', this.baseVisibility.bind(this));
 	\$scope.\$watch('\$parent.catalog.selectedTab', this.baseVisibility.bind(this));
 
 	dgCont = this;
@@ -834,6 +828,17 @@ DataGridController.prototype.start = async function()
 {
 	if(this.fullData)
 		return;
+
+	this.restoreData();
+
+	this.grid.api.core.on.filterChanged(this.\$scope, this.saveData.bind(this));
+	this.grid.api.core.on.columnVisibilityChanged(this.\$scope, this.saveData.bind(this));
+	this.grid.api.core.on.sortChanged(this.\$scope, this.saveData.bind(this));
+	this.grid.api.colResizable.on.columnSizeChanged(this.\$scope, this.saveData.bind(this));
+
+	this.\$scope.\$watch('dg.hideDLC', this.switchChanged.bind(this));
+	this.\$scope.\$watch('dg.hideOwned', this.switchChanged.bind(this));
+
 	var allGames = await this.getGames('/games/ajax/filtered?mediaType=game&sort=bestselling');
 	var newGames = await this.getGames('/games/ajax/filtered?mediaType=game&sort=bestselling&availability=new');
 
@@ -856,12 +861,7 @@ DataGridController.prototype.start = async function()
 	this.fullData = allGames;
 	this.baseVisibility();
 
-	this.restoreData();
 	this.grid.refresh();
-
-	this.grid.api.core.on.filterChanged(this.\$scope, this.saveData.bind(this));
-	this.grid.api.core.on.columnVisibilityChanged(this.\$scope, this.saveData.bind(this));
-	this.grid.api.colResizable.on.columnSizeChanged(this.\$scope, this.saveData.bind(this));
 };
 
 DataGridController.prototype.getGames = async function(url)
@@ -1133,6 +1133,27 @@ DataGridController.prototype.setsEqual = function(s1, s2)
 	return true;
 }
 
+DataGridController.prototype.switchChanged = function()
+{
+	this.saveData();
+	this.baseVisibility()
+};
+
+DataGridController.prototype.toggleImages = function(\$event)
+{
+	this.showImages = !this.showImages;
+	this.grid.getColumn('title').menuItems[0].icon = !this.showImages ? 'ui-grid-icon-blank' : 'ui-grid-icon-ok';
+	this.saveData();
+	this.baseVisibility();
+};
+
+
+DataGridController.prototype.expandSaveData = function()
+{
+	if(this.fullData)
+		this.saveData();
+};
+
 DataGridController.prototype.saveData = function()
 {
 	for(let c of this.grid.columns)
@@ -1141,18 +1162,23 @@ DataGridController.prototype.saveData = function()
 			storage.set(c.name+'_filter', c.filters.map(f=>f.term));
 		storage.set(c.name+'_width', c.width);
 		storage.set(c.name+'_vis', c.visible);
+		storage.set(c.name+'_sort', c.sort);
 	}
 	storage.set('expanded', this.\$scope.\$parent.cat_expanded || false);
+	storage.set('hideOwned', this.hideOwned || false);
+	storage.set('hideDLC', this.hideDLC || false);
+	storage.set('showImages', this.showImages || false);
 	storage.save();
 };
 
 DataGridController.prototype.restoreData = function()
 {
 	storage.restore();
+	let v;
 	for(let c of this.grid.columns)
 	{
 		c.colDef.origWidth = c.colDef.width;
-		let i = 0, v;
+		let i = 0;
 		for(let ft of storage.get(c.name+'_filter') || [])
 			if(c.filters[i])
 				c.filters[i++].term = ft;
@@ -1163,9 +1189,15 @@ DataGridController.prototype.restoreData = function()
 				c.hideColumn();
 		if((v = storage.get(c.name+'_width')) !== undefined)
 			c.colDef.width = c.width = v;
+		if((v = storage.get(c.name+'_sort')) !== undefined)
+			c.sort = v;
 	}
 	if(this.\$scope.\$parent.cat_expanded = storage.get('expanded'))
 		this.grid.refreshCanvas();
+	this.hideOwned = storage.get('hideOwned') || false;
+	this.hideDLC = storage.get('hideDLC') || false;
+	if((v = storage.get('showImages')) !== undefined && v !== this.showImages)
+		this.toggleImages();
 };
 
 startDatagrid = function(\$scope)
@@ -1193,12 +1225,12 @@ angular.element(document.querySelector("div[hook-test='menuAbout'] .js-menu")).a
 var \$cfs = angular.element(document.querySelector('.catalog__filters-sorting'));
 \$cfs.css('width','calc(100% - 20px)');
 \$cfs.append(\`
-<svg class="expand_button" ng-show="!cat_expanded" ng-click="cat_expanded=!cat_expanded;catalog.\$window.dgCont.saveData();catalog.\$window.dgCont.grid.refreshCanvas()" width="16" height="14" viewBox="0 0 50 40" preserveAspectRatio="xMidYMid meet">
+<svg class="expand_button" ng-show="!cat_expanded" ng-click="cat_expanded=!cat_expanded;catalog.\$window.dgCont.expandSaveData();catalog.\$window.dgCont.grid.refreshCanvas()" width="16" height="14" viewBox="0 0 50 40" preserveAspectRatio="xMidYMid meet">
 <title>Expand to full screen width</title>
 <polygon points="0,0 10,0 30,20 10,40 0,40 20,20"></polygon>
 <polygon points="20,0 30,0 50,20 30,40 20,40 40,20"></polygon>
 </svg>
-<svg class="expand_button" ng-show="cat_expanded" ng-click="cat_expanded=!cat_expanded;catalog.\$window.dgCont.saveData();catalog.\$window.dgCont.grid.refreshCanvas()" width="16" height="14" viewBox="0 0 50 40" preserveAspectRatio="xMidYMid meet">
+<svg class="expand_button" ng-show="cat_expanded" ng-click="cat_expanded=!cat_expanded;catalog.\$window.dgCont.expandSaveData();catalog.\$window.dgCont.grid.refreshCanvas()" width="16" height="14" viewBox="0 0 50 40" preserveAspectRatio="xMidYMid meet">
 <title>Shrink back to screen center</title>
 <polygon points="50,0 40,0 20,20 40,40 50,40 30,20"></polygon>
 <polygon points="30,0 20,0 0,20 20,40 30,40 10,20"></polygon>
