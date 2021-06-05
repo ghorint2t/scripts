@@ -5,7 +5,7 @@
 // @author       Ghorin
 // @updateURL    https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
 // @downloadURL  https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
-// @version   8
+// @version   9
 // @grant     unsafeWindow
 // @grant     GM_addStyle
 // @match     https://www.gog.com/games*
