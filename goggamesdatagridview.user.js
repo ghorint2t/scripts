@@ -5,7 +5,7 @@
 // @author       Ghorin
 // @updateURL    https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
 // @downloadURL  https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
-// @version   9
+// @version   10
 // @grant     unsafeWindow
 // @grant     GM_addStyle
 // @match     https://www.gog.com/games*
@@ -586,7 +586,7 @@ for(let c of ['.catalog__games-list','.catalog__sidebar','.catalog__search-conta
 <div id="datagridview" ng-show="viewSwitcher.activeView == 'datagrid'" style="width:100%" ng-controller="DataGridController as dg">
 	<div class="dg-option" ng-click="dg.hideOwned=!dg.hideOwned"><i class="dg-check" ng-class="{'dg-checked':dg.hideOwned}"></i>Hide owned</div>
 	<div class="dg-option" ng-click="dg.hideDLC=!dg.hideDLC"><i class="dg-check" ng-class="{'dg-checked':dg.hideDLC}"></i>Hide DLCs</div>
-	<div class="dg-stat">Games displayed: {{dg.grid.getVisibleRowCount()}}</div>
+	<div class="dg-stat">Games displayed: {{dg.grid.getVisibleRowCount()}} of {{dg.fullData.length || 0}}</div>
 	<br>
     <div ui-grid="dgOptions" class="datagrid" ui-grid-auto-resize ui-grid-resize-columns style="width:100%"></div>
 </div>
@@ -880,8 +880,10 @@ DataGridController.prototype.getGames = async function(url)
 	var allGames = new Array(pages);
 	allGames[0] = games.data.products;
 	var retries = 0, done = 1;
-	while(done < pages && retries++ < 3)
+	while(done < pages && retries++ < 5)
 	{
+		if(done > 1)
+			await new Promise(function(resolve) { setTimeout(resolve, 500); });
 		await new Promise(function(resolve, reject)
 		{
 			var requests = 0, todo = allGames.length - allGames.filter(a=>a).length;
@@ -892,8 +894,11 @@ DataGridController.prototype.getGames = async function(url)
 				me.\$http.get(\`\${url}&page=\${i}\`).
 					then(function(r)
 					{
-						allGames[r.data.page-1] = r.data.products;
-						done++;
+						if(r.data?.products?.length)
+						{
+							allGames[r.data.page-1] = r.data.products;
+							done++;
+						}
 						if(++requests >= todo)
 							resolve();
 					}, function(err)
