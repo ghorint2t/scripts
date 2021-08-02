@@ -65,3 +65,4 @@ It is possible for the catalogue data download to cause the infamous 'wrong gog_
 
 The script requires either GreaseMonkey or TamperMonkey plugin in your browser. Once it's installed, navigate to the 
 goggamesdatagridview.user.js file and click the 'Raw' button to add the script, or use [this direct link](https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js).
+
