@@ -2,7 +2,7 @@
 
 ## Overview
 
-This user script adds a third way to display games in the store view at [https://gog.com/games](https://gog.com/games). It works by downloading the entire catalogue data from gog and putting it in a [generic angular.js grid control](http://ui-grid.info/). This way, all the sorting and filtering can be done at client side, which greatly improves performance for the end user (although maybe not so for gog servers :)). The download size of the whole data is ~2.5MB.
+This user script adds a third way to display games in the store view at [https://gog.com/games](https://gog.com/games). It works by downloading the entire catalogue data from gog and putting it in a [generic angular.js grid control](http://ui-grid.info/). This way, all the sorting and filtering can be done at client side, which greatly improves performance for the end user (although maybe not so for gog servers :)). The download size of the whole data is ~3MB.
 
 ![](https://github.com/ghorint2t/scripts/raw/master/doc/img/sale_sorting.jpg "Helpful sorting for large sales")
 
@@ -21,8 +21,11 @@ This user script adds a third way to display games in the store view at [https:/
   * Current price
 - Option to filter out DLCs
 - Option to filter out owned games
-- Integration with wishlist/cart from the store
-- Grid state (column widths, visibility and filters) are saved in browser local storage
+- Integration with wishlist/cart from the store, with a separate tab added for viewing (and sorting) your wishlist
+- A blacklist of games that will be excluded from all searches
+- Grid state (column widths, visibility, filters and blacklist) are saved in browser local storage between sessions
+- Option to save and load the grid configuraration (including blacklist) either to transfer your blacklist between browsers/devices, or to save your favorite filter setups.
+- Option to view the grid in full screen width
 
 ## Details
 
@@ -35,6 +38,7 @@ This user script adds a third way to display games in the store view at [https:/
 - For the price filter, the 0.01 rounding is taken into account when filtering, eg. both "10" and ">=10" filters will include 9.99 priced games.
 - TBA games have their price internally set to -1 for purposes of sorting and filtering. Use "0.1-10" range filter instead of "<10" operator filter if you want to exclude free/TBA games from your searches (doesn't affect 'On Sale' tab, as free/TBA games are never discounted).
 - Thumbnail images can be turned on from 'Title' column's menu
+- Blacklist is stored in local browser cache; to use the same list in another browser and/or device, use the save and load buttons below the grid.
 
 ## Example filters
 
