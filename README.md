@@ -24,7 +24,7 @@ This user script adds a third way to display games in the store view at [https:/
 - Integration with wishlist/cart from the store, with a separate tab added for viewing (and sorting) your wishlist
 - A blacklist of games that will be excluded from all searches
 - Grid state (column widths, visibility, filters and blacklist) are saved in browser local storage between sessions
-- Option to save and load the grid configuraration (including blacklist) either to transfer your blacklist between browsers/devices, or to save your favorite filter setups.
+- Option to save and load the grid configuraration (including blacklist) either to transfer your blacklist between browsers/devices, or to save your favorite filter setups
 - Option to view the grid in full screen width
 
 ## Details
