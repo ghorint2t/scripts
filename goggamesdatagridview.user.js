@@ -810,7 +810,7 @@ ng-class="{free: row.entity.price.isFree || !row.entity.isPriceVisible}">{{row.e
 				enableFiltering: false,
 				enableSorting: false,
 				enableColumnMenu: false,
-				width: 48, 
+				width: 72, 
 				cellTemplate: 
 \`<div class="ui-grid-cell-contents datagrid-cart" title="TOOLTIP" ng-class="{cart:row.entity.inCart,wl:row.entity.inWishlist,bl:row.entity.inBlacklist}"><div><button 
 ng-click="grid.appScope.dg.toggleWishlist(row.entity)" ng-show="row.entity.isWishlistable && !row.entity.owned" 
