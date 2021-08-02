@@ -5,7 +5,7 @@
 // @author       Ghorin
 // @updateURL    https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
 // @downloadURL  https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
-// @version   10
+// @version   11
 // @grant     unsafeWindow
 // @grant     GM_addStyle
 // @match     https://www.gog.com/games*
@@ -557,8 +557,10 @@ multiselect [class^="ui-ms-icon-"], [class*=" ui-ms-icon-"] {
 var gridctrl = `
 var sw = document.querySelector(".catalog__view-switch");
 var cat = document.querySelector(".catalog__body");
+var tabs = document.querySelector(".catalog__tabs-wrapper--row");
 var \$switch = angular.element(sw);
 var \$catalog = angular.element(cat);
+var \$tabs = angular.element(tabs);
 var \$switchGrid = angular.element(sw.querySelector('.view-switch-btn[ng-click*="grid"]'));
 var \$switchList = angular.element(sw.querySelector('.view-switch-btn[ng-click*="list"]'));
 
@@ -569,7 +571,10 @@ var \$switchList = angular.element(sw.querySelector('.view-switch-btn[ng-click*=
 for(let c of ['.catalog__games-list','.catalog__sidebar','.catalog__search-container','.catalog__sort-by','.filters-status','.filters__toggle-clear','.catalog__paginator-wrapper'])
 	angular.element(document.querySelector(c)).attr('ng-hide', "viewSwitcher.activeView == 'datagrid'");
 
-
+\$tabs.append(\`
+<div class="tabs-row-option ng-hide" ng-hide="viewSwitcher.activeView != 'datagrid'" ng-click="catalog.selectedTab = 'tab_wishlist'" ng-class="{'tabs-row-option--selected': catalog.selectedTab === 'tab_wishlist'}">Wishlist</div>
+<div class="tabs-row-option ng-hide" ng-hide="viewSwitcher.activeView != 'datagrid'" ng-click="catalog.selectedTab = 'tab_blacklist'" ng-class="{'tabs-row-option--selected': catalog.selectedTab === 'tab_blacklist'}">Blacklist</div>
+\`);
 
 \$switch.append(\`
 <svg class="view-switch-btn view-switch-btn-list view-switch-btn" ng-click="catalog.\$window.startDatagrid(this)" ng-class="{'view-switch-btn--active': viewSwitcher.activeView == 'datagrid'}" width="14" height="14" viewBox="0 0 40 40" preserveAspectRatio="xMidYMid meet">
@@ -583,14 +588,19 @@ for(let c of ['.catalog__games-list','.catalog__sidebar','.catalog__search-conta
 </svg>\`);
            
 \$catalog.append(\`
-<div id="datagridview" ng-show="viewSwitcher.activeView == 'datagrid'" style="width:100%" ng-controller="DataGridController as dg">
+<div id="datagridview" class="ng-hide" ng-show="viewSwitcher.activeView == 'datagrid'" style="width:100%" ng-controller="DataGridController as dg">
 	<div class="dg-option" ng-click="dg.hideOwned=!dg.hideOwned"><i class="dg-check" ng-class="{'dg-checked':dg.hideOwned}"></i>Hide owned</div>
 	<div class="dg-option" ng-click="dg.hideDLC=!dg.hideDLC"><i class="dg-check" ng-class="{'dg-checked':dg.hideDLC}"></i>Hide DLCs</div>
 	<div class="dg-stat">Games displayed: {{dg.grid.getVisibleRowCount()}} of {{dg.fullData.length || 0}}</div>
 	<br>
     <div ui-grid="dgOptions" class="datagrid" ui-grid-auto-resize ui-grid-resize-columns style="width:100%"></div>
+	<div class="btn dg-btn" ng-click="dg.saveToFile()"><span>&#x2913;</span>Save configuration</div><div class="btn dg-btn" ng-click="dg.restoreFromFile()"><span>&#x2912;</span>Load configuration</div>
+	<a class="dg-download"></a><input type="file" class="dg-upload">
 </div>
 \`);
+
+var download = document.querySelector(".dg-download");
+var upload = document.querySelector(".dg-upload");
 
 var dgCont;
 
@@ -638,6 +648,7 @@ function DataGridController(\$scope, \$http, \$window, cart, wishlist)
 	this.\$scope = \$scope;
 	this.\$http = \$http;
 	this.data = [];
+	this.blacklist = {};
 
 	var hdrTempl = "<div role=\\"columnheader\\" ng-class=\\"{ 'sortable': sortable, 'ui-grid-header-cell-last-col': isLastCol }\\" ui-grid-one-bind-aria-labelledby-grid=\\"col.uid + '-header-text ' + col.uid + '-sortdir-text'\\" aria-sort=\\"{{col.sort.direction == asc ? 'ascending' : ( col.sort.direction == desc ? 'descending' : (!col.sort.direction ? 'none' : 'other'))}}\\"><div role=\\"button\\" tabindex=\\"0\\" ng-keydown=\\"handleKeyDown(\$event)\\" class=\\"ui-grid-cell-contents ui-grid-header-cell-primary-focus\\" col-index=\\"renderIndex\\" title=\\"TOOLTIP\\"><span class=\\"ui-grid-header-cell-label\\" ui-grid-one-bind-id-grid=\\"col.uid + '-header-text'\\">##HDR## {{CUSTOM_FILTERS }}</span> <span ui-grid-one-bind-id-grid=\\"col.uid + '-sortdir-text'\\" ui-grid-visible=\\"col.sort.direction\\" aria-label=\\"{{getSortDirectionAriaLabel()}}\\"><i ng-class=\\"{ 'ui-grid-icon-up-dir': col.sort.direction == asc, 'ui-grid-icon-down-dir': col.sort.direction == desc, 'ui-grid-icon-blank': !col.sort.direction }\\" title=\\"{{isSortPriorityVisible() ? i18n.headerCell.priority + ' ' + ( col.sort.priority + 1 )  : null}}\\" aria-hidden=\\"true\\"></i> <sub ui-grid-visible=\\"isSortPriorityVisible()\\" class=\\"ui-grid-sort-priority-number\\">{{col.sort.priority + 1}}</sub></span></div><div role=\\"button\\" tabindex=\\"0\\" ui-grid-one-bind-id-grid=\\"col.uid + '-menu-button'\\" class=\\"ui-grid-column-menu-button\\" ng-if=\\"grid.options.enableColumnMenus && !col.isRowHeader  && col.colDef.enableColumnMenu !== false\\" ng-click=\\"toggleMenu(\$event)\\" ng-keydown=\\"headerCellArrowKeyDown(\$event)\\" ui-grid-one-bind-aria-label=\\"i18n.headerCell.aria.columnMenuButtonLabel\\" aria-haspopup=\\"true\\"><i class=\\"ui-grid-icon-angle-down\\" aria-hidden=\\"true\\">&nbsp;</i></div><div ui-grid-filter></div></div>";
 	var nf = this.numFilter.bind(this);
@@ -801,9 +812,10 @@ ng-class="{free: row.entity.price.isFree || !row.entity.isPriceVisible}">{{row.e
 				enableColumnMenu: false,
 				width: 48, 
 				cellTemplate: 
-\`<div class="ui-grid-cell-contents datagrid-cart" title="TOOLTIP" ng-class="{cart:row.entity.inCart,wl:row.entity.inWishlist}"><div><button 
+\`<div class="ui-grid-cell-contents datagrid-cart" title="TOOLTIP" ng-class="{cart:row.entity.inCart,wl:row.entity.inWishlist,bl:row.entity.inBlacklist}"><div><button 
 ng-click="grid.appScope.dg.toggleWishlist(row.entity)" ng-show="row.entity.isWishlistable && !row.entity.owned" 
-class="wl"><i></i></button></div><div><button 
+class="wl"><i></i></button></div><div><button ng-click="grid.appScope.dg.toggleBlacklist(row.entity)" 
+ng-show="!row.entity.owned" class="bl"><i></i></button></div><div><button 
 ng-click="grid.appScope.dg.toggleCart(row.entity)" ng-show="row.entity.buyable" class="cart"><svg 
 role="img" ng-show="!row.entity.inCart"><use xlink:href="/svg/cc041adc.svg#button-add-to-cart"></use></svg><svg 
 role="img" ng-show="row.entity.inCart"><use xlink:href="/svg/cc041adc.svg#button-in-cart"></use></svg>
@@ -812,7 +824,7 @@ role="img" ng-show="row.entity.inCart"><use xlink:href="/svg/cc041adc.svg#button
 
 		],
 		rowTemplate: 
-\`<div ng-class="{'datagrid-owned-row':row.entity.owned && !row.entity.inCart,'datagrid-cart-row':row.entity.inCart,'datagrid-wl-row':row.entity.inWishlist && !row.entity.inCart}"><div 
+\`<div ng-class="{'datagrid-owned-row':row.entity.owned && !row.entity.inCart,'datagrid-cart-row':row.entity.inCart,'datagrid-wl-row':row.entity.inWishlist && !row.entity.inCart,'datagrid-bl-row':row.entity.inBlacklist}"><div 
 ng-repeat="(colRenderIndex, col) in colContainer.renderedColumns track by col.uid" 
 ui-grid-one-bind-id-grid="rowRenderIndex + '-' + col.uid + '-cell'" class="ui-grid-cell" 
 ng-class="{ 'ui-grid-row-header-cell': col.isRowHeader }" 
@@ -970,6 +982,11 @@ DataGridController.prototype.dataMod = function(entry)
 	entry._price = !entry.isPriceVisible ? -1 : parseFloat(entry.price.amount);
 	entry.inCart = this.cartSet.has(entry.id);
 	entry.inWishlist = this.wishlistSet.has(entry.id);
+	if(this.blacklist[entry.id.toString()])
+		if(entry.inCart || entry.inWishlist || entry.owned)
+			delete this.blacklist[entry.id.toString()];
+		else
+			entry.inBlacklist = true;
 };
 
 const numExp = /(-?[\\d.]+(?!\\s*-|[\\d.]))|(?:(-?[\\d.]+)\\s*-\\s*(-?[\\d.]+))|(?:(<|>|<=|>=)\\s*(-?[\\d.]+))/g;
@@ -1076,16 +1093,22 @@ DataGridController.prototype.baseVisibility = function()
 	switch(this.\$scope.catalog.selectedTab)
 	{
 		case 'tab_new_releases':
-			tabCheck = e=>e.new;
+			tabCheck = e=>e.new && !e.inBlacklist;
 			break;
 		case 'tab_upcoming':
-			tabCheck = e=>e.isComingSoon;
+			tabCheck = e=>e.isComingSoon && !e.inBlacklist;
 			break;
 		case 'tab_on_sale':
-			tabCheck = e=>e.discount > 0;
+			tabCheck = e=>e.discount > 0 && !e.inBlacklist;
+			break;
+		case 'tab_wishlist':
+			tabCheck = e=>e.inWishlist;
+			break;
+		case 'tab_blacklist':
+			tabCheck = e=>e.inBlacklist;
 			break;
 		default:
-			tabCheck = e=>true;
+			tabCheck = e=>!e.inBlacklist;
 			break;
 	}
 	this.data = this.fullData.filter(e=>(!this.hideDLC || e.type!=3) && (!this.hideOwned || !e.owned) && tabCheck(e));
@@ -1096,15 +1119,46 @@ DataGridController.prototype.toggleCart = function(entry)
 	if(entry.inCart)
 		this.cart.remove(entry.id);
 	else
+	{
 		this.cart.add(entry.id.toString());
+		if(entry.inBlacklist) this.toggleBlacklist(entry);
+	}
 }
 
 DataGridController.prototype.toggleWishlist = function(entry)
 {
 	if(entry.inWishlist)
+	{
 		this.wishlist.remove(entry.id.toString())
+		if(this.\$scope.catalog.selectedTab == 'tab_wishlist')
+			this.unlist(entry);
+	}
 	else
+	{
 		this.wishlist.add(entry.id.toString());
+		if(entry.inBlacklist) this.toggleBlacklist(entry);
+	}
+}
+
+DataGridController.prototype.toggleBlacklist = function(entry)
+{
+	if(entry.inBlacklist = !entry.inBlacklist)
+	{
+		if(entry.inWishlist) this.toggleWishlist(entry);
+		if(entry.inCart) this.toggleCart(entry);
+		if(this.\$scope.catalog.selectedTab != 'tab_blacklist')
+			this.unlist(entry);
+		this.blacklist[entry.id.toString()] = true;
+		this.saveData();
+		return;
+	}
+	delete this.blacklist[entry.id.toString()];
+	this.saveData();
+
+	if(this.\$scope.catalog.selectedTab == 'tab_blacklist')
+		this.unlist(entry);
+	else
+		this.baseVisibility();
 }
 
 DataGridController.prototype.cartUpdate = function(data)
@@ -1113,19 +1167,68 @@ DataGridController.prototype.cartUpdate = function(data)
 	if(this.setsEqual(dataSet, this.cartSet))
 		return;
 	this.cartSet = dataSet;
+	var refresh = false;
 	if(this.fullData)
-		this.fullData.forEach(e=>e.inCart = dataSet.has(e.id));
+		this.fullData.forEach(e=>{
+			if(e.inCart = dataSet.has(e.id))
+				refresh = this.checkBlacklistRefresh(e) || refresh;
+		});
+	if(refresh)
+		this.baseVisibility();
 }
 
 DataGridController.prototype.wishlistUpdate = function(data)
 {
-	var dataSet = new Set(data.wishlistedProducts.map(i=>parseInt(i)));
+	var wl = this.wishlist.getProducts();
+	var dataSet = new Set((wl ? Object.keys(wl) : []).map(i=>parseInt(i)));
 	if(this.setsEqual(dataSet, this.wishlistSet))
 		return;
 	this.wishlistSet = dataSet;
+	var refresh = false;
 	if(this.fullData)
-		this.fullData.forEach(e=>e.inWishlist = dataSet.has(e.id));
+		this.fullData.forEach(e=>{
+			if(e.inWishlist = dataSet.has(e.id))
+				refresh = this.checkBlacklistRefresh(e) || refresh;
+			refresh = this.checkWishlistRefresh(e) || refresh;
+		});
+	if(refresh)
+		this.baseVisibility();
 }
+
+DataGridController.prototype.checkBlacklistRefresh = function(entry)
+{
+	if(entry.inBlacklist)
+	{
+		entry.inBlacklist = false;
+		delete this.blacklist[entry.id.toString()];
+		this.saveData();
+		if(this.\$scope.catalog.selectedTab == 'tab_blacklist')
+			this.unlist(entry);
+		else
+			return data.indexOf(entry) == -1;
+	}
+	return false;
+}
+
+DataGridController.prototype.checkWishlistRefresh = function(entry)
+{
+	if(entry.inWishlist)
+	{
+		if(this.\$scope.catalog.selectedTab == 'tab_wishlist')
+			return data.indexOf(entry) == -1;
+	}
+	else if(this.\$scope.catalog.selectedTab == 'tab_wishlist')
+		this.unlist(entry);
+	return false;
+}
+
+DataGridController.prototype.unlist = function(entry)
+{
+	var idx = this.data.indexOf(entry);
+	if(idx > -1)
+		this.data.splice(idx, 1);
+}
+
 
 DataGridController.prototype.setsEqual = function(s1, s2)
 {
@@ -1161,6 +1264,8 @@ DataGridController.prototype.expandSaveData = function()
 
 DataGridController.prototype.saveData = function()
 {
+	if(this.restoring)
+		return;
 	for(let c of this.grid.columns)
 	{
 		if(c.filters)
@@ -1173,12 +1278,15 @@ DataGridController.prototype.saveData = function()
 	storage.set('hideOwned', this.hideOwned || false);
 	storage.set('hideDLC', this.hideDLC || false);
 	storage.set('showImages', this.showImages || false);
+	storage.set('blacklist', this.blacklist);
 	storage.save();
 };
 
-DataGridController.prototype.restoreData = function()
+DataGridController.prototype.restoreData = function(fromFile)
 {
-	storage.restore();
+	this.restoring = true;
+	if(!fromFile)
+		storage.restore();
 	let v;
 	for(let c of this.grid.columns)
 	{
@@ -1203,7 +1311,132 @@ DataGridController.prototype.restoreData = function()
 	this.hideDLC = storage.get('hideDLC') || false;
 	if((v = storage.get('showImages')) !== undefined && v !== this.showImages)
 		this.toggleImages();
+	this.blacklist = storage.get('blacklist') || {};
+	this.restoring = false;
 };
+
+DataGridController.prototype.saveToFile = function()
+{
+	this.saveData();
+    var file = new Blob([JSON.stringify(storage.data)], {type: 'application/json'});
+    download.href = URL.createObjectURL(file);
+    download.download = 'GOG datagrid configuration.json';
+	download.click();
+};
+
+DataGridController.prototype.restoreFromFile = function()
+{
+	upload.onchange = this.restorePart1.bind(this);
+	upload.click();
+};
+
+DataGridController.prototype.restorePart1 = function()
+{
+	if(!upload.files || !upload.files.length || !upload.files[0])
+		return;
+	var fr = new FileReader();
+	fr.onload = this.restorePart2.bind(this);
+	fr.readAsText(upload.files[0]);
+};
+
+DataGridController.prototype.restorePart2 = function(e)
+{
+	var text = e.target.result;
+	var parsed;
+	try
+	{
+		parsed = JSON.parse(text);
+	}
+	catch(ex)
+	{
+		return alert('This is not a valid JSON file.');
+	}
+
+	try
+	{
+		let data = {};
+		let key, val;
+
+		if(typeof parsed !== 'object' || Array.isArray(parsed))
+			throw new Error('not an object');
+
+		for(let c of this.grid.columns)
+		{
+			if(val = parsed[key = c.name+'_filter'])
+				if(!Array.isArray(val) || val.length < 1)
+					throw new Error('wrong filter for '+c.name);
+				else
+				{	
+					if(c.name === 'genre')
+					{
+						for(let subval of val)
+							if(typeof subval !== 'object' ||
+								!Array.isArray(subval.options) ||
+								subval.options.filter(o=>typeof(o) !== 'string').length ||
+								typeof subval.mode?.and !== 'boolean')
+								throw new Error('wrong subfilter for '+c.name);
+					}
+					else
+						for(let subval of val)
+							if(subval != null && typeof subval !== 'string')
+								throw new Error('wrong subfilter for '+c.name);
+					data[key] = val;
+				}
+			if(val = parsed[key = c.name+'_width'])
+			{
+				if(val !== '*' && typeof val !== 'number')
+					throw new Error('wrong width for '+c.name);
+				data[key] = val;
+			}
+			if(val = parsed[key = c.name+'_sort'])
+			{
+				if(typeof val !== 'object' ||
+					(Object.keys(val).length > 0 &&
+						(typeof val.priority !== 'number' ||
+						(val.direction !== 'asc' && val.direction !== 'desc'))))
+					throw new Error('wrong sort for '+c.name);
+				data[key] = val;
+			}
+			if((val = parsed[key = c.name+'_vis']) !== undefined)
+			{
+				if(typeof val !== 'boolean')
+					throw new Error('wrong vis for '+c.name);
+				data[key] = val;
+			}
+		}
+		for(key of ['expanded','hideOwned','hideDLC','showImages'])
+			if((val = parsed[key]) !== undefined)
+				if(typeof val !== 'boolean')
+					throw new Error('wrong value for '+key);
+				else
+					data[key] = val;
+		if(val = parsed[key = 'blacklist'])
+			if(typeof val !== 'object')
+				throw new Error('wrong blacklist');
+			else
+			{
+				for(let subkey in val)
+					if(parseInt(subkey) == NaN || val[subkey] !== true)
+						throw new Error('wrong blacklist entry');
+				data[key] = val;
+			}
+		for(key in data)
+			storage.set(key, data[key]);
+
+		this.restoreData(true);
+		for(let entry of this.fullData)
+			entry.inBlacklist = !entry.inWishlist && !entry.inCart && this.blacklist[entry.id.toString()];
+		this.baseVisibility();
+		this.grid.refresh();
+	}
+	catch(ex)
+	{
+		return alert('This is not a valid grid configuration file: '+ex.message);
+	}
+	alert('Configuration restored.');
+};
+
+
 
 startDatagrid = function(\$scope)
 {
@@ -1230,21 +1463,22 @@ angular.element(document.querySelector("div[hook-test='menuAbout'] .js-menu")).a
 var \$cfs = angular.element(document.querySelector('.catalog__filters-sorting'));
 \$cfs.css('width','calc(100% - 20px)');
 \$cfs.append(\`
-<svg class="expand_button" ng-show="!cat_expanded" ng-click="cat_expanded=!cat_expanded;catalog.\$window.dgCont.expandSaveData();catalog.\$window.dgCont.grid.refreshCanvas()" width="16" height="14" viewBox="0 0 50 40" preserveAspectRatio="xMidYMid meet">
+<svg class="expand_button ng-hide" ng-show="!cat_expanded" ng-click="cat_expanded=!cat_expanded;catalog.\$window.dgCont.expandSaveData();catalog.\$window.dgCont.grid.refreshCanvas()" width="16" height="14" viewBox="0 0 50 40" preserveAspectRatio="xMidYMid meet">
 <title>Expand to full screen width</title>
 <polygon points="0,0 10,0 30,20 10,40 0,40 20,20"></polygon>
 <polygon points="20,0 30,0 50,20 30,40 20,40 40,20"></polygon>
 </svg>
-<svg class="expand_button" ng-show="cat_expanded" ng-click="cat_expanded=!cat_expanded;catalog.\$window.dgCont.expandSaveData();catalog.\$window.dgCont.grid.refreshCanvas()" width="16" height="14" viewBox="0 0 50 40" preserveAspectRatio="xMidYMid meet">
+<svg class="expand_button ng-hide" ng-show="cat_expanded" ng-click="cat_expanded=!cat_expanded;catalog.\$window.dgCont.expandSaveData();catalog.\$window.dgCont.grid.refreshCanvas()" width="16" height="14" viewBox="0 0 50 40" preserveAspectRatio="xMidYMid meet">
 <title>Shrink back to screen center</title>
 <polygon points="50,0 40,0 20,20 40,40 50,40 30,20"></polygon>
 <polygon points="30,0 20,0 0,20 20,40 30,40 10,20"></polygon>
 </svg>\`);
 angular.element(document.querySelectorAll('.container--catalog')).attr('ng-class', "{'catalog-expanded': cat_expanded}");
+
 `;
 
 var gridctrlcss = `
-.datagrid { width:300px;height:auto; margin-bottom: 20px;font-size:0.8em; }
+.datagrid { width:300px;height:auto; margin-bottom: 5px;font-size:0.8em; }
 .dg-option { display: inline-block; margin-right:1em; cursor: pointer; }
 .dg-check { font-style: normal; display: inline-block; width: 1em; height: 1em; border: 1px solid; position: relative; top: 0.2em; margin-right: 0.2em; }
 .dg-checked::before {font-family:'gog-icons';content:'\\e60c';font-size:0.7em;position:absolute;padding-left:0.15em;}
@@ -1265,6 +1499,7 @@ input[type="text"].ui-grid-filter-input { padding-right: 14px; }
 .datagrid-owned-row { color: #999; fill: #999}
 .datagrid-cart-row { color: #7fab34; fill: #7fab34}
 .datagrid-wl-row { color: #ffa200; fill: #ffa200}
+.datagrid-bl-row { color: #116; }
 .datagrid-title > a { display:flex;flex-direction:row;height:100%; }
 .datagrid-title > a > img { height:100%;margin-right:5px; }
 .datagrid-title > a.dlc { font-style:italic; }
@@ -1298,10 +1533,15 @@ input[type="text"].ui-grid-filter-input { padding-right: 14px; }
 .datagrid-cart button.wl > i { font-style: normal; font-family: 'gog-icons'; }
 .datagrid-cart button.wl > i::before { content:'\\e600'; }
 .datagrid-cart.wl button.wl > i::before { content:'\\e60a';color:#ffa200; }
+.datagrid-cart button.bl { display: none; border: 1px solid transparent; width: 1.5em; height: 1.4em; padding: 0.1em 0.45em 0.1em 0.15em; margin-top: 0.4em; cursor: pointer; background: transparent; color:#444;}
+.datagrid-cart button.bl > i { font-style: normal; font-family: 'gog-icons'; }
+.datagrid-cart button.bl > i::before { content:'\\e00a'; }
+.datagrid-cart button.bl:hover { color:#116; }
+.datagrid-cart.bl button.bl > i::before { color:#116; }
 .datagrid-cart button.cart { display: none; border: 1px solid #7fab34; border-radius: 3px; width: 1.5em; height: 1.4em; padding: 0.1em 0.3em; margin-top: 0.4em;cursor: pointer; background-image: linear-gradient(180deg,#a5c700,#86b300); box-shadow: 0 1px 2px 0 rgba(0,0,0,.35); transition: .2s; fill: #fff; }
 .datagrid-cart button.cart:hover { background-image: linear-gradient(180deg,#acce00,#8bba00); }
 .datagrid-cart button.cart > svg { width: 1em; height: 1em; }
-.ui-grid-row:hover .datagrid-cart button, .datagrid-cart.cart button.cart, .datagrid-cart.wl button.wl { display: inline-block; }
+.ui-grid-row:hover .datagrid-cart button, .datagrid-cart.cart button.cart, .datagrid-cart.wl button.wl, .datagrid-cart.bl button.bl { display: inline-block; }
 .ui-ms-icon-ok::before { font-family:'gog-icons';content:'\\e60c';font-size:0.7em;}
 .ui-ms-icon-remove::before { font-family:'gog-icons';content:'\\f00d';}
 .datagrid-ms { font-size: 0.9em; width:calc(100% - 12px); }
@@ -1309,6 +1549,10 @@ input[type="text"].ui-grid-filter-input { padding-right: 14px; }
 .expand_button { width:16px; height:14px; fill:#595959; position:absolute; right:-20px; bottom:-7px; z-index:10; }
 .expand_button:hover { fill: #78387b; }
 .catalog-expanded {max-width:initial !important;}
+.dg-btn {padding: 0em 0.8em; display:inline-block; margin-right: 1em; text-transform:none; margin-bottom:0.5em; font-size:1em;}
+.dg-btn > span {font-size:1.2em;padding: 0 0.3em 0 0;margin-left: -0.2em;}
+.dg-download {display:none;}
+.dg-upload {display:none;}
 
 `;
 
