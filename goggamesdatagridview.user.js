@@ -5,7 +5,7 @@
 // @author       Ghorin
 // @updateURL    https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
 // @downloadURL  https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
-// @version   11
+// @version   12
 // @grant     unsafeWindow
 // @grant     GM_addStyle
 // @match     https://www.gog.com/games*
@@ -571,10 +571,10 @@ var \$switchList = angular.element(sw.querySelector('.view-switch-btn[ng-click*=
 for(let c of ['.catalog__games-list','.catalog__sidebar','.catalog__search-container','.catalog__sort-by','.filters-status','.filters__toggle-clear','.catalog__paginator-wrapper'])
 	angular.element(document.querySelector(c)).attr('ng-hide', "viewSwitcher.activeView == 'datagrid'");
 
-\$tabs.append(\`
-<div class="tabs-row-option ng-hide" ng-hide="viewSwitcher.activeView != 'datagrid'" ng-click="catalog.selectedTab = 'tab_wishlist'" ng-class="{'tabs-row-option--selected': catalog.selectedTab === 'tab_wishlist'}">Wishlist</div>
-<div class="tabs-row-option ng-hide" ng-hide="viewSwitcher.activeView != 'datagrid'" ng-click="catalog.selectedTab = 'tab_blacklist'" ng-class="{'tabs-row-option--selected': catalog.selectedTab === 'tab_blacklist'}">Blacklist</div>
-\`);
+\$tabs.append(\`<div
+class="tabs-row-option ng-hide dg-tab-sep" ng-hide="viewSwitcher.activeView != 'datagrid'">&nbsp;</div><div
+class="tabs-row-option ng-hide" ng-hide="viewSwitcher.activeView != 'datagrid'" ng-click="catalog.selectedTab = 'tab_wishlist'" ng-class="{'tabs-row-option--selected': catalog.selectedTab === 'tab_wishlist'}">Wishlist</div><div 
+class="tabs-row-option ng-hide" ng-hide="viewSwitcher.activeView != 'datagrid'" ng-click="catalog.selectedTab = 'tab_blacklist'" ng-class="{'tabs-row-option--selected': catalog.selectedTab === 'tab_blacklist'}">Blacklist</div>\`);
 
 \$switch.append(\`
 <svg class="view-switch-btn view-switch-btn-list view-switch-btn" ng-click="catalog.\$window.startDatagrid(this)" ng-class="{'view-switch-btn--active': viewSwitcher.activeView == 'datagrid'}" width="14" height="14" viewBox="0 0 40 40" preserveAspectRatio="xMidYMid meet">
@@ -811,6 +811,7 @@ ng-class="{free: row.entity.price.isFree || !row.entity.isPriceVisible}">{{row.e
 				enableSorting: false,
 				enableColumnMenu: false,
 				width: 72, 
+				minWidth: 72, 
 				cellTemplate: 
 \`<div class="ui-grid-cell-contents datagrid-cart" title="TOOLTIP" ng-class="{cart:row.entity.inCart,wl:row.entity.inWishlist,bl:row.entity.inBlacklist}"><div><button 
 ng-click="grid.appScope.dg.toggleWishlist(row.entity)" ng-show="row.entity.isWishlistable && !row.entity.owned" 
@@ -1301,7 +1302,7 @@ DataGridController.prototype.restoreData = function(fromFile)
 			else
 				c.hideColumn();
 		if((v = storage.get(c.name+'_width')) !== undefined)
-			c.colDef.width = c.width = v;
+			c.colDef.width = c.width = !c.colDef.minWidth ? v : Math.max(v, c.colDef.minWidth);
 		if((v = storage.get(c.name+'_sort')) !== undefined)
 			c.sort = v;
 	}
@@ -1553,7 +1554,7 @@ input[type="text"].ui-grid-filter-input { padding-right: 14px; }
 .dg-btn > span {font-size:1.2em;padding: 0 0.3em 0 0;margin-left: -0.2em;}
 .dg-download {display:none;}
 .dg-upload {display:none;}
-
+.dg-tab-sep {border-left: 1.5px solid #bfbfbf;height: 75%;width: 0;margin: 0 20px 0 -10px;}
 `;
 
 new MutationObserver(function(mlist, ob)
