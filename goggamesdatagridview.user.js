@@ -1554,7 +1554,7 @@ input[type="text"].ui-grid-filter-input { padding-right: 14px; }
 .dg-btn > span {font-size:1.2em;padding: 0 0.3em 0 0;margin-left: -0.2em;}
 .dg-download {display:none;}
 .dg-upload {display:none;}
-.dg-tab-sep {border-left: 1.5px solid #bfbfbf;height: 75%;width: 0;margin: 0 20px 0 -10px;}
+.dg-tab-sep {border-left: 1.5px solid #bfbfbf;height: 75%;width: 0;margin: 0 20px 0 -10px;cursor:default;}
 `;
 
 new MutationObserver(function(mlist, ob)
