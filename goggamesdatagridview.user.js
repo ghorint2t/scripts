@@ -5,7 +5,7 @@
 // @author       Ghorin
 // @updateURL    https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
 // @downloadURL  https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
-// @version   13
+// @version   14
 // @grant     unsafeWindow
 // @grant     GM_addStyle
 // @match     https://www.gog.com/games*
@@ -735,6 +735,7 @@ function DataGridController(\$scope, \$http, \$window, \$compile, cart, wishlist
 	this.showImages = false;
 	\$window.gogEventBus.subscribe('cart', 'updated', this.cartUpdate.bind(this));
 	\$window.gogEventBus.subscribe('wishlist', 'updated', this.wishlistUpdate.bind(this));
+	\$window.gogEventBus.subscribe('ownedProducts', 'updated', this.ownedUpdate.bind(this));
 
 	this.\$scope = \$scope;
 	this.\$http = \$http;
@@ -953,16 +954,6 @@ DataGridController.prototype.start = async function()
 	if(isNew)
 		this.wishlistUpdate(null);
 
-	var tmp;
-	if(tmp = window.localStorage.dataClient_menuData)
-	{
-		let uid = JSON.parse(tmp).userId;
-		if(uid && (tmp = window.localStorage['gog_'+uid+'_userOwnedGamesData']) &&
-			Array.isArray(tmp = JSON.parse(tmp)))
-		{
-			this.owned = new Set(tmp.map(id=>parseInt(id)));
-		}
-	}
 	this.\$scope.genres = [...new Set(allGames.map(d=>d.genres).flat().filter(g=>g.length))].sort();
 	this.newGameIds = new Set(newGames.map(d=>d.id));
 
@@ -1027,8 +1018,8 @@ DataGridController.prototype.getGames = async function(url)
 
 DataGridController.prototype.dataMod = function(entry)
 {
-	if(this.owned)
-		entry.owned = this.owned.has(entry.id);
+	if(this.ownedSet)
+		entry.owned = this.ownedSet.has(entry.id);
 	entry.new = this.newGameIds.has(entry.id);
 
 	entry.rank = ++this.cnt;
@@ -1294,6 +1285,20 @@ DataGridController.prototype.wishlistUpdate = function(data)
 		this.baseVisibility();
 }
 
+DataGridController.prototype.ownedUpdate = function(data)
+{
+	var dataSet = new Set((data?.ownedProducts || []).map(id=>parseInt(id)));
+	if(this.setsEqual(dataSet, this.ownedSet))
+		return;
+	this.ownedSet = dataSet;
+	var refresh = false;
+	if(this.fullData)
+		this.fullData.forEach(e=>{if(!e.owned && (e.owned = dataSet.has(e.id))) refresh = true;});
+	if(refresh)
+		this.baseVisibility();
+}
+
+
 DataGridController.prototype.checkBlacklistRefresh = function(entry)
 {
 	if(entry.inBlacklist)
@@ -1331,6 +1336,10 @@ DataGridController.prototype.unlist = function(entry)
 
 DataGridController.prototype.setsEqual = function(s1, s2)
 {
+	if(!s1 && !s2)
+		return true;
+	else if(!s1 || !s2)
+		return false;
 	for(var el of s1)
 		if(!s2.has(el))
 			return false;
@@ -1649,7 +1658,10 @@ input[type="text"].ui-grid-filter-input { padding-right: 14px; }
 .dg-download {display:none;}
 .dg-upload {display:none;}
 .dg-tab-sep {border-left: 1.5px solid #bfbfbf;height: 75%;width: 0;margin: 0 20px 0 -10px;cursor:default;}
-.datagrid-icon {mask:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNCIgaGVpZ2h0PSIxNCIgdmlld0JveD0iMCAwIDQwIDQwIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWlkWU1pZCBtZWV0Ij4KCQk8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iNDAiIGhlaWdodD0iNiI+PC9yZWN0PgoJCTxyZWN0IHg9IjAiIHk9IjM0IiB3aWR0aD0iNDAiIGhlaWdodD0iNiI+PC9yZWN0PgoJCTxyZWN0IHg9IjAiIHk9IjE0IiB3aWR0aD0iNDAiIGhlaWdodD0iNiI+PC9yZWN0PgoJCTxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSI2IiBoZWlnaHQ9IjQwIj48L3JlY3Q+CgkJPHJlY3QgeD0iMzQiIHk9IjAiIHdpZHRoPSI2IiBoZWlnaHQ9IjQwIj48L3JlY3Q+CgkJPHJlY3QgeD0iMTMiIHk9IjAiIHdpZHRoPSI0IiBoZWlnaHQ9IjQwIj48L3JlY3Q+CgkJPHJlY3QgeD0iMjQiIHk9IjAiIHdpZHRoPSI0IiBoZWlnaHQ9IjQwIj48L3JlY3Q+CgkJPC9zdmc+");mask-repeat:no-repeat;}
+.datagrid-icon {
+mask:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNCIgaGVpZ2h0PSIxNCIgdmlld0JveD0iMCAwIDQwIDQwIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWlkWU1pZCBtZWV0Ij4KCQk8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iNDAiIGhlaWdodD0iNiI+PC9yZWN0PgoJCTxyZWN0IHg9IjAiIHk9IjM0IiB3aWR0aD0iNDAiIGhlaWdodD0iNiI+PC9yZWN0PgoJCTxyZWN0IHg9IjAiIHk9IjE0IiB3aWR0aD0iNDAiIGhlaWdodD0iNiI+PC9yZWN0PgoJCTxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSI2IiBoZWlnaHQ9IjQwIj48L3JlY3Q+CgkJPHJlY3QgeD0iMzQiIHk9IjAiIHdpZHRoPSI2IiBoZWlnaHQ9IjQwIj48L3JlY3Q+CgkJPHJlY3QgeD0iMTMiIHk9IjAiIHdpZHRoPSI0IiBoZWlnaHQ9IjQwIj48L3JlY3Q+CgkJPHJlY3QgeD0iMjQiIHk9IjAiIHdpZHRoPSI0IiBoZWlnaHQ9IjQwIj48L3JlY3Q+CgkJPC9zdmc+");
+-webkit-mask:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNCIgaGVpZ2h0PSIxNCIgdmlld0JveD0iMCAwIDQwIDQwIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWlkWU1pZCBtZWV0Ij4KCQk8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iNDAiIGhlaWdodD0iNiI+PC9yZWN0PgoJCTxyZWN0IHg9IjAiIHk9IjM0IiB3aWR0aD0iNDAiIGhlaWdodD0iNiI+PC9yZWN0PgoJCTxyZWN0IHg9IjAiIHk9IjE0IiB3aWR0aD0iNDAiIGhlaWdodD0iNiI+PC9yZWN0PgoJCTxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSI2IiBoZWlnaHQ9IjQwIj48L3JlY3Q+CgkJPHJlY3QgeD0iMzQiIHk9IjAiIHdpZHRoPSI2IiBoZWlnaHQ9IjQwIj48L3JlY3Q+CgkJPHJlY3QgeD0iMTMiIHk9IjAiIHdpZHRoPSI0IiBoZWlnaHQ9IjQwIj48L3JlY3Q+CgkJPHJlY3QgeD0iMjQiIHk9IjAiIHdpZHRoPSI0IiBoZWlnaHQ9IjQwIj48L3JlY3Q+CgkJPC9zdmc+");
+mask-repeat:no-repeat;-webkit-mask-repeat:no-repeat;}
 #datagridview {font-size:16px;}
 #datagridview a { text-decoration: none; color: inherit; outline: none; }
 #datagridview .product-tile__discount { margin-right: 8px; border-radius: 2px; background: #6d1d72; color: #fff; font-weight: 700; line-height: 12px; }
