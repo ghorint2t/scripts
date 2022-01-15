@@ -5,7 +5,7 @@
 // @author       Ghorin
 // @updateURL    https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
 // @downloadURL  https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
-// @version   14
+// @version   15
 // @grant     unsafeWindow
 // @grant     GM_addStyle
 // @match     https://www.gog.com/games*
@@ -680,7 +680,7 @@ else
 		\$switch.css('left', '20px');
 		\$header.css('width','calc(100% - 20px)');
 		\$header.append(switchHtml);
-		angular.element(document.querySelectorAll('.app__content')).attr('ng-class', "{'catalog-expanded': cat_expanded}");
+		angular.element(document.querySelectorAll('.app__container')).attr('ng-class', "{'catalog-expanded': cat_expanded}");
 
 
 		dgCont.\$scope.viewSwitcher = {activeView: 
