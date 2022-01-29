@@ -5,7 +5,7 @@
 // @author       Ghorin
 // @updateURL    https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
 // @downloadURL  https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
-// @version   15
+// @version   16
 // @grant     unsafeWindow
 // @grant     GM_addStyle
 // @match     https://www.gog.com/games*
@@ -653,7 +653,7 @@ else
 
 
 		for(let c of ['filter-clearing-list','paginated-products-grid','.catalog__filters-outer-wrapper',
-			'.catalog__section-header','.catalog__search','.sort__wrapper','small-pagination'])
+			'.catalog__section-header','.catalog__search','.sort__wrapper','small-pagination','.catalog__page-header'])
 			angular.element(document.querySelector(c)).attr('ng-hide', "viewSwitcher.activeView=='datagrid'");
 
 		// reintroduce tabs from old page
