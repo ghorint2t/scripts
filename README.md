@@ -35,10 +35,10 @@ This user script adds a third way to display games in the store view at [https:/
   * a single specific number, eg. year "1995"
   * a range of numbers (including both ends), eg. years "1990-2000"
   * operator-value pairs, eg. discount ">=75", price "<10"
-  * combinations of the above for combining filters (joined with OR), eg. rating "-1 >=4" that includes games both unrated and rated 4 stars or more
+  * combinations of the above for combining filters (joined with OR), eg. rating "0 >=4" that includes games both unrated and rated 4 stars or more
 - For the price filter, the 0.01 rounding is taken into account when filtering, eg. both "10" and ">=10" filters will include 9.99 priced games.
 - TBA games have their price internally set to -1 for purposes of sorting and filtering. Use "0.1-10" range filter instead of "<10" operator filter if you want to exclude free/TBA games from your searches (doesn't affect 'On Sale' tab, as free/TBA games are never discounted).
-- Similarly, unrated games have their rating internally set to -1
+- Similarly, unrated games have their rating internally set to 0.
 - Thumbnail images can be turned on from 'Title' column's menu
 - Blacklist is stored in local browser cache; to use the same list in another browser and/or device, use the save and load buttons below the grid.
 - Blacklist is mutually exclusive with wishlist and cart. Blacklisting a game removes it from wishlist and cart, and vice-versa: adding a game to wishlist or cart removes it from blacklist.
