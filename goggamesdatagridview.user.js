@@ -5,7 +5,7 @@
 // @author       Ghorin
 // @updateURL    https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
 // @downloadURL  https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
-// @version   17
+// @version   18
 // @grant     unsafeWindow
 // @grant     GM_addStyle
 // @match     https://www.gog.com/games*
@@ -1289,7 +1289,7 @@ DataGridController.prototype.toggleBlacklist = function(entry)
 
 DataGridController.prototype.cartUpdate = function(data)
 {
-	var dataSet = new Set(data.cartContent);
+	var dataSet = new Set(data.cartContent.map(i=>parseInt(i)));
 	if(this.setsEqual(dataSet, this.cartSet))
 		return;
 	this.cartSet = dataSet;
