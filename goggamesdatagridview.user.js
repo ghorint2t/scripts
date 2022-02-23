@@ -5,7 +5,7 @@
 // @author       Ghorin
 // @updateURL    https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
 // @downloadURL  https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
-// @version   18
+// @version   19
 // @grant     unsafeWindow
 // @grant     GM_addStyle
 // @match     https://www.gog.com/games*
@@ -1694,7 +1694,7 @@ input[type="text"].ui-grid-filter-input { padding-right: 14px; }
 .dg-download {display:none;}
 .dg-upload {display:none;}
 .dg-tab-sep {border-left: 1.5px solid #bfbfbf;height: 75%;width: 0;margin: 0 20px 0 -10px;cursor:default;}
-.datagrid-icon {
+.datagrid-icon { display:inline-block;
 mask:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNCIgaGVpZ2h0PSIxNCIgdmlld0JveD0iMCAwIDQwIDQwIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWlkWU1pZCBtZWV0Ij4KCQk8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iNDAiIGhlaWdodD0iNiI+PC9yZWN0PgoJCTxyZWN0IHg9IjAiIHk9IjM0IiB3aWR0aD0iNDAiIGhlaWdodD0iNiI+PC9yZWN0PgoJCTxyZWN0IHg9IjAiIHk9IjE0IiB3aWR0aD0iNDAiIGhlaWdodD0iNiI+PC9yZWN0PgoJCTxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSI2IiBoZWlnaHQ9IjQwIj48L3JlY3Q+CgkJPHJlY3QgeD0iMzQiIHk9IjAiIHdpZHRoPSI2IiBoZWlnaHQ9IjQwIj48L3JlY3Q+CgkJPHJlY3QgeD0iMTMiIHk9IjAiIHdpZHRoPSI0IiBoZWlnaHQ9IjQwIj48L3JlY3Q+CgkJPHJlY3QgeD0iMjQiIHk9IjAiIHdpZHRoPSI0IiBoZWlnaHQ9IjQwIj48L3JlY3Q+CgkJPC9zdmc+");
 -webkit-mask:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNCIgaGVpZ2h0PSIxNCIgdmlld0JveD0iMCAwIDQwIDQwIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWlkWU1pZCBtZWV0Ij4KCQk8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iNDAiIGhlaWdodD0iNiI+PC9yZWN0PgoJCTxyZWN0IHg9IjAiIHk9IjM0IiB3aWR0aD0iNDAiIGhlaWdodD0iNiI+PC9yZWN0PgoJCTxyZWN0IHg9IjAiIHk9IjE0IiB3aWR0aD0iNDAiIGhlaWdodD0iNiI+PC9yZWN0PgoJCTxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSI2IiBoZWlnaHQ9IjQwIj48L3JlY3Q+CgkJPHJlY3QgeD0iMzQiIHk9IjAiIHdpZHRoPSI2IiBoZWlnaHQ9IjQwIj48L3JlY3Q+CgkJPHJlY3QgeD0iMTMiIHk9IjAiIHdpZHRoPSI0IiBoZWlnaHQ9IjQwIj48L3JlY3Q+CgkJPHJlY3QgeD0iMjQiIHk9IjAiIHdpZHRoPSI0IiBoZWlnaHQ9IjQwIj48L3JlY3Q+CgkJPC9zdmc+");
 mask-repeat:no-repeat;-webkit-mask-repeat:no-repeat;}
