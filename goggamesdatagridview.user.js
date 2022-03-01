@@ -5,10 +5,11 @@
 // @author       Ghorin
 // @updateURL    https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
 // @downloadURL  https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
-// @version   19
+// @version   20
 // @grant     unsafeWindow
 // @grant     GM_addStyle
 // @match     https://www.gog.com/games*
+// @match     https://www.gog.com/*/games*
 // @require   https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
 // @run-at    document-start
 // ==/UserScript==
