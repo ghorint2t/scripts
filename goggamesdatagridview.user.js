@@ -5,7 +5,7 @@
 // @author       Ghorin
 // @updateURL    https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
 // @downloadURL  https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
-// @version   20
+// @version   21
 // @grant     unsafeWindow
 // @grant     GM_addStyle
 // @match     https://www.gog.com/games*
@@ -135,17 +135,10 @@ angular.module('ui.multiselect', [])
           scope.\$watch(function () {
             return modelCtrl.\$modelValue;
           }, function (newVal, oldVal) {
-            //when directive initialize, newVal usually undefined. Also, if model value already set in the controller
-            //for preselected list then we need to mark checked in our scope item. But we don't want to do this every time
-            //model changes. We need to do this only if it is done outside directive scope, from controller, for example.
-            if (angular.isDefined(newVal)) {
-              markChecked(!isMultiple ? newVal : newVal ? newVal.options : newVal);
-			  if(isMultiple && newVal && newVal.mode)
-				{
+            markChecked(!isMultiple ? newVal : newVal ? newVal.options : newVal);
+			if(isMultiple && newVal && newVal.mode)
 				  scope.mode.and = newVal.mode.and;
-				}
-              scope.\$eval(changeHandler);
-            }
+            scope.\$eval(changeHandler);
             getHeaderText();
             modelCtrl.\$setValidity('required', scope.valid());
           }, true);
@@ -424,6 +417,11 @@ multiselect .ui-ms-dropdown-menu > li
 	flex; 0;
 }
 
+multiselect .ui-ms-options-list > li
+{
+	padding-right:1em;
+}
+
 multiselect .ui-ms-options-list
 {
 	flex: 1;
@@ -431,6 +429,7 @@ multiselect .ui-ms-options-list
     overflow-y: auto;
     box-sizing: border-box;
 	padding: 0;
+	white-space: nowrap;
 }
 
 multiselect .open > .ui-ms-dropdown-menu {
@@ -760,13 +759,22 @@ var storage = {
 	},
 };
 
-function DataGridController(\$scope, \$http, \$window, \$compile, cart, wishlist)
+function DataGridController(\$scope, \$http, \$window, \$compile, cart, wishlist, user)
 {
 	var me = this;
     \$scope.genres = [];
+    \$scope.tags = [];
     \$scope.oss = ['Windows','Mac','Linux'];
+
+	if(this.lang = window.location.href.match(/^.*\\/\\/.*\\/([a-zA-Z]{2})\\/game.*\$/))
+		this.lang = '/'+this.lang[1];
+	else
+		this.lang = '';
+
 	this.cart = cart;
 	this.wishlist = wishlist;
+	this.user = user;
+	this.localeArgs = user.menuDataClient.endpointUrl.split('?')[1].replace(/(country|currency)/g,'\$1Code');
 	this.cartSet = new Set();
 	this.wishlistSet = new Set();
 	this.showImages = false;
@@ -820,9 +828,9 @@ function DataGridController(\$scope, \$http, \$window, \$compile, cart, wishlist
 				field: 'titleWithMods',
 				cellTemplate: new Promise((resolve, reject) => resolve(
 \`<div class="ui-grid-cell-contents datagrid-title" title="TOOLTIP"><a 
-href="{{row.entity.url}}" ng-class="{dlc:row.entity.type===3}" target="_new"><img 
-ng-if="grid.appScope.dg.showImages" src="{{row.entity.image}}_product_tile_116.jpg"></img><span
-ng-if="row.entity.type===3">[DLC]&nbsp;</span>{{row.entity.title}}<span
+href="{{row.entity.url}}" ng-class="{dlc:row.entity.dlc}" target="_new"><img 
+ng-if="grid.appScope.dg.showImages" src="{{row.entity.image}}"></img><span
+ng-if="row.entity.dlc">[DLC]&nbsp;</span>{{row.entity.title}}<span
 ng-if="row.entity.owned">&nbsp(OWNED)</span><span class="datagrid-title-mod indev" 
 ng-if="row.entity.isInDevelopment">InDev</span><span class="datagrid-title-mod soon" 
 ng-if="row.entity.isComingSoon">SOON</span><span class="datagrid-title-mod new" 
@@ -838,31 +846,24 @@ ng-if="row.entity.new">New!</span></a></div>\` )),
 				shortDisplayName: 'Genre', 
 				displayName: 'Genre', 
 				field: 'genreStr', 
-				filters: [
-					{ condition:this.genreFilter.bind(this, false) },
-					{ condition:this.genreFilter.bind(this, true) }
-				],
-				width: 135, 
-				cellTemplate: 
-\`<div class="ui-grid-cell-contents datagrid-genre" title="TOOLTIP"><div></div><span
->{{COL_FIELD CUSTOM_FILTERS}}</span><div></div></div>\`, 
-				filterHeaderTemplate:
-\`<div class="ui-grid-filter-container" ng-style="col.extraStyle" 
-ng-repeat="colFilter in col.filters" 
-ng-class="{'ui-grid-filter-cancel-button-hidden' : colFilter.disableCancelFilterButton === true }"><multiselect 
-class="datagrid-ms" multiple="true" ng-model="colFilter.term"
-options="c for c in grid.appScope.genres"
-change="grid.appScope.dg.genreFilterHeader(this, \$parent.colFilter)"></multiselect><div 
-role="button" class="ui-grid-filter-button-select" 
-ng-click="removeFilter(colFilter, \$index)" ng-if="!colFilter.disableCancelFilterButton" 
-ng-disabled="colFilter.term === undefined || colFilter.term === null || !colFilter.term.options || colFilter.term.options.length === 0" 
-ng-show="colFilter.term !== undefined && colFilter.term != null && colFilter.term.options && colFilter.term.options.length"><i 
-class="ui-grid-icon-cancel" ui-grid-one-bind-aria-label="aria.removeFilter">&nbsp;</i></div></div>\`
+				filters: this.multiFilterDefs('genres'),
+				width: 110, 
+				cellTemplate: this.multiTemplate('genre'), 
+				filterHeaderTemplate: this.multiHeaderTemplate('genre')
+			}, {
+				name: 'tag', 
+				shortDisplayName: 'Tag', 
+				displayName: 'Tag', 
+				field: 'tagStr', 
+				filters: this.multiFilterDefs('tags'),
+				width: 110, 
+				cellTemplate: this.multiTemplate('tag'), 
+				filterHeaderTemplate: this.multiHeaderTemplate('tag')
 			}, {
 				name: 'devpub', 
 				shortDisplayName: 'Developer/Publisher', 
 				displayName: 'Developer/Publisher', 
-				width: 155, 
+				width: 145, 
 				cellTemplate: 
 \`<div class="ui-grid-cell-contents datagrid-devpub" title="TOOLTIP"
 >{{row.entity.developer}}<br/>{{row.entity.publisher}}</div>\`
@@ -871,7 +872,7 @@ class="ui-grid-icon-cancel" ui-grid-one-bind-aria-label="aria.removeFilter">&nbs
 				shortDisplayName: 'Year', 
 				displayName: 'Release year', 
 				filter: {condition:nf}, 
-				width: 60, 
+				width: 45, 
 				cellTemplate: 
 \`<div class="ui-grid-cell-contents datagrid-year" title="TOOLTIP" ng-if="row.entity.year"
 >{{COL_FIELD}}</div><div class="ui-grid-cell-contents datagrid-year" title="TOOLTIP" ng-if="!row.entity.year"
@@ -884,9 +885,9 @@ class="ui-grid-icon-cancel" ui-grid-one-bind-aria-label="aria.removeFilter">&nbs
 				width: 53, 
 				cellTemplate: 
 \`<div class="ui-grid-cell-contents datagrid-os" title="TOOLTIP"><svg 
-role="img" ng-if="row.entity.worksOn.Windows"><use xlink:href="#gog-windows"></use></svg><svg
-role="img" ng-if="row.entity.worksOn.Mac"><use xlink:href="#gog-mac"></use></svg><svg 
-role="img" ng-if="row.entity.worksOn.Linux"><use xlink:href="#gog-linux"></use></svg></div>\`, 
+role="img" ng-if="row.entity.Windows"><use xlink:href="#gog-windows"></use></svg><svg
+role="img" ng-if="row.entity.Mac"><use xlink:href="#gog-mac"></use></svg><svg 
+role="img" ng-if="row.entity.Linux"><use xlink:href="#gog-linux"></use></svg></div>\`, 
 				filterHeaderTemplate:
 \`<div class="ui-grid-filter-container" ng-style="col.extraStyle" 
 ng-repeat="colFilter in col.filters" 
@@ -900,15 +901,15 @@ ng-disabled="colFilter.term === undefined || colFilter.term === null || !colFilt
 ng-show="colFilter.term !== undefined && colFilter.term !== null && colFilter.term.length"><i 
 class="ui-grid-icon-cancel" ui-grid-one-bind-aria-label="aria.removeFilter">&nbsp;</i></div></div>\`
 			}, {
-				name: 'rating', 
+				name: 'reviewsRating', 
 				shortDisplayName: 'Rating', 
 				displayName: 'User rating', 
 				filter: {condition:nf}, 
 				type: 'number',
-				width: 75, 
+				width: 65, 
 				cellTemplate: 
-\`<div class="ui-grid-cell-contents datagrid-rating" ng-if="row.entity.rating > 0" title="TOOLTIP">{{COL_FIELD}}<br/><span
->{{row.entity.ratingStr}}</span></div><div class="ui-grid-cell-contents datagrid-norating" if="row.entity.rating==0">N/A</div>\`
+\`<div class="ui-grid-cell-contents datagrid-rating" ng-if="row.entity.reviewsRating > 0" title="TOOLTIP">{{COL_FIELD}}<br/><span
+>{{row.entity.ratingStr}}</span></div><div class="ui-grid-cell-contents datagrid-norating" if="row.entity.reviewsRating==0">N/A</div>\`
 			}, {
 				name: 'discount', 
 				shortDisplayName: 'Disc.', 
@@ -986,16 +987,17 @@ DataGridController.prototype.start = async function()
 	this.\$scope.\$watch('dg.hideDLC', this.switchChanged.bind(this));
 	this.\$scope.\$watch('dg.hideOwned', this.switchChanged.bind(this));
 
-	var allGames = await this.getGames('/games/ajax/filtered?mediaType=game&sort=bestselling');
-	var newGames = await this.getGames('/games/ajax/filtered?mediaType=game&sort=bestselling&availability=new');
+	var allGames = await this.getGames('//catalog.gog.com/v1/catalog?order=desc%3Abestselling&productType=in%3Agame%2Cpack%2Cdlc%2Cextras&'+this.localeArgs);
+	var newGames = await this.getGames('//catalog.gog.com/v1/catalog?order=desc%3Abestselling&productType=in%3Agame%2Cpack%2Cdlc%2Cextras&releaseStatuses=in%3Anew-arrival&'+this.localeArgs);
 	if(isNew)
 		this.wishlistUpdate(null);
 
-	this.\$scope.genres = [...new Set(allGames.map(d=>d.genres).flat().filter(g=>g.length))].sort();
-	this.newGameIds = new Set(newGames.map(d=>d.id));
-
+	this.newGameIds = new Set(newGames.map(d=>parseInt(d.id)));
 	this.cnt = 0;
 	allGames.forEach(this.dataMod.bind(this));
+
+	this.\$scope.genres = [...new Set(allGames.map(d=>d.genres).flat().filter(g=>g.length))].sort();
+	this.\$scope.tags = [...new Set(allGames.map(d=>d.tags).flat().filter(g=>g.length))].sort();
 
 	this.fullData = allGames;
 	this.baseVisibility();
@@ -1003,10 +1005,15 @@ DataGridController.prototype.start = async function()
 	this.grid.refresh();
 };
 
+
+
 DataGridController.prototype.getGames = async function(url)
 {
 	var me = this;
 	var games;
+
+	url += '&limit=100';
+
 	try
 	{
 		games = await this.\$http.get(\`\${url}&page=1\`);
@@ -1015,7 +1022,7 @@ DataGridController.prototype.getGames = async function(url)
 	{
 		return [];
 	}
-	var pages = games.data.totalPages;
+	var pages = games.data.pages;
 	var allGames = new Array(pages);
 	allGames[0] = games.data.products;
 	var retries = 0, done = 1;
@@ -1035,7 +1042,7 @@ DataGridController.prototype.getGames = async function(url)
 					{
 						if(r.data?.products?.length)
 						{
-							allGames[r.data.page-1] = r.data.products;
+							allGames[i-1] = r.data.products;
 							done++;
 						}
 						if(++requests >= todo)
@@ -1048,65 +1055,78 @@ DataGridController.prototype.getGames = async function(url)
 			}
 		});
 	}
-
 	return allGames.filter(a=>a).flat();
 };
 
 
 DataGridController.prototype.dataMod = function(entry)
 {
+	entry.id = parseInt(entry.id);
 	if(this.ownedSet)
 		entry.owned = this.ownedSet.has(entry.id);
 	entry.new = this.newGameIds.has(entry.id);
 
 	entry.rank = ++this.cnt;
 
+	entry.url = this.lang+'/game/'+entry.slug.replace(/-/g,'_');;
 	entry.titleWithMods = entry.title;
-	if(entry.type == 3)
+	if(entry.productType == 'dlc' || entry.productType == 'extras')
+	{
+		entry.dlc = true;
 		entry.titleWithMods += "[DLC]";
+	}
 	if(entry.owned)
 		entry.titleWithMods += "(OWNED)";
-	if(entry.isInDevelopment)
+	if(entry.isInDevelopment = entry.productState == 'early-access')
 		entry.titleWithMods += " InDev";
-	if(entry.isComingSoon)
+	if(entry.isComingSoon = entry.productState == 'coming-soon')
 		entry.titleWithMods += " SOON";
 
-	entry.devpub = entry.developer+" "+entry.publisher;
-	if(!entry.globalReleaseDate)
+	entry.devpub = (entry.developer = entry.developers.join(', '))+" "+
+		(entry.publisher = entry.publishers.join(', '));
+	if(!entry.releaseDate)
 		entry.year = 0;
 	else
-		entry.year = new Date(entry.globalReleaseDate*1000).getFullYear();
+		entry.year = parseInt(entry.releaseDate.substring(0,4));
 	if(entry.isComingSoon)
-		entry.rating = 0;
+		entry.reviewsRating = 0;
 	else 
 	{
 		entry.ratingStr = '';
 
-		for(let i=0;i<~~((entry.rating+2)/10);i++)
+		for(let i=0;i<~~((entry.reviewsRating+2)/10);i++)
 			entry.ratingStr += '\\ue601';
-		if(entry.rating%10 >2 && entry.rating%10 < 8)
+		if(entry.rating%10 >2 && entry.reviewsRating%10 < 8)
 			entry.ratingStr += '\\ue603';
 		for(let i=entry.ratingStr.length; i<5 ; i++)
 			entry.ratingStr += '\\ue602';
-		entry.rating /= 10.0;
+		entry.reviewsRating /= 10.0;
 	}
 
+	entry.genres = entry.genres.map(g=>g.name);
 	entry.genreStr = entry.genres.join(', ');
-	entry.discount = entry.price.discount;
-	entry.discountStr = '-'+entry.price.discount+'%';
-	if(entry.price.promoId && entry.price.promoId.length)
+	entry.tags = entry.tags.map(t=>t.name);
+	entry.tagStr = entry.tags.join(', ');
+	entry.discount = !entry.price?.discount ? 0 : -parseInt(entry.price.discount.replace('%',''));
+	entry.discountStr = entry.price?.discount;
+	if(entry.price?.promoId && entry.price?.promoId.length)
 		entry.promoStr = "/promo/"+entry.price.promoId;
 	entry.os = 0;
-	if(entry.worksOn.Windows)
+	if(entry.Windows = entry.operatingSystems.indexOf('windows')>-1)
 		entry.os += 4;
-	if(entry.worksOn.Mac)
+	if(entry.Mac = entry.operatingSystems.indexOf('osx')>-1)
 		entry.os += 2;
-	if(entry.worksOn.Linux)
+	if(entry.Linux = entry.operatingSystems.indexOf('linux')>-1)
 		entry.os += 1;
-	entry.basePriceStr = entry.price.baseAmount+" "+entry.price.symbol;
-	entry.priceStr = !entry.isPriceVisible ? "TBA" : entry.price.isFree ? "Free" : (entry.price.amount+" "+entry.price.symbol);
-	entry.bonusStr = entry.price.bonusStoreCreditAmount === "0.00" ? null : ("+"+entry.price.bonusStoreCreditAmount+" "+entry.price.symbol);
-	entry._price = !entry.isPriceVisible ? -1 : parseFloat(entry.price.amount);
+	if(entry.price)
+		entry.basePriceStr = entry.price.baseMoney.amount+" "+entry.price.baseMoney.currency;
+	entry._price = !entry.price ? -1 : parseFloat(entry.price.finalMoney.amount);
+	entry.priceStr = !entry.price ? "TBA" : entry._price <= 0.00001 ? "Free" : (entry.price.finalMoney.amount+" "+entry.price.finalMoney.currency);
+//	entry.bonusStr = entry.price.bonusStoreCreditAmount === "0.00" ? null : ("+"+entry.price.bonusStoreCreditAmount+" "+entry.price.symbol);
+
+	entry.image = entry.coverHorizontal.replace(/\\.(png|jpg)/,'')+'_product_tile_116.jpg';
+	entry.isWishlistable = entry.buyable = !entry.isComingSoon;
+
 	entry.inCart = this.cartSet.has(entry.id);
 	entry.inWishlist = this.wishlistSet.has(entry.id);
 	if(this.blacklist[entry.id.toString()])
@@ -1147,9 +1167,40 @@ DataGridController.prototype.numFilter = function(searchTerm, cellValue, round)
 	return ok || !any;
 };
 
-DataGridController.prototype.genreFilterHeader = function(msscope, colFilter)
+DataGridController.prototype.multiFilterDefs = function(column)
 {
-	var exclude = colFilter !== this.grid.getColumn('genre').filters[0];
+	return [
+		{ condition:this.multiFilter.bind(this, false, column) },
+		{ condition:this.multiFilter.bind(this, true, column) }
+	];
+};
+
+DataGridController.prototype.multiTemplate = function(column)
+{
+	var tooltip = column == 'tag' ? '{{row.entity.tagStr}}' : 'TOOLTIP';
+	return \`<div class="ui-grid-cell-contents datagrid-genre" title="\${tooltip}"><div></div><span
+>{{COL_FIELD CUSTOM_FILTERS}}</span><div></div></div>\`;
+};
+
+DataGridController.prototype.multiHeaderTemplate = function(column)
+{
+	return \`<div class="ui-grid-filter-container" ng-style="col.extraStyle" 
+ng-repeat="colFilter in col.filters" 
+ng-class="{'ui-grid-filter-cancel-button-hidden' : colFilter.disableCancelFilterButton === true }"><multiselect 
+class="datagrid-ms" multiple="true" ng-model="colFilter.term"
+options="c for c in grid.appScope.\${column}s"
+change="grid.appScope.dg.multiFilterHeader(this, '\${column}', \$parent.colFilter)"></multiselect><div 
+role="button" class="ui-grid-filter-button-select" 
+ng-click="removeFilter(colFilter, \$index)" ng-if="!colFilter.disableCancelFilterButton" 
+ng-disabled="colFilter.term === undefined || colFilter.term === null || !colFilter.term.options || colFilter.term.options.length === 0" 
+ng-show="colFilter.term !== undefined && colFilter.term != null && colFilter.term.options && colFilter.term.options.length"><i 
+class="ui-grid-icon-cancel" ui-grid-one-bind-aria-label="aria.removeFilter">&nbsp;</i></div></div>\`;
+};
+
+
+DataGridController.prototype.multiFilterHeader = function(msscope, column, colFilter)
+{
+	var exclude = colFilter !== this.grid.getColumn(column).filters[0];
 	var sel = colFilter.term;
 	var hdr;
 	if(!sel || !sel.options || !sel.options.length)
@@ -1163,7 +1214,7 @@ DataGridController.prototype.genreFilterHeader = function(msscope, colFilter)
 	angular.element(msscope.element[0].querySelector('.ui-ms-pull-left')).html(hdr);
 };
 
-DataGridController.prototype.genreFilter = function(exclude, searchTerm, cellValue, row)
+DataGridController.prototype.multiFilter = function(exclude, column, searchTerm, cellValue, row)
 {
 	if(!searchTerm || !searchTerm.options || !searchTerm.options.length)
 		return true;
@@ -1172,7 +1223,7 @@ DataGridController.prototype.genreFilter = function(exclude, searchTerm, cellVal
 	{
 		ok = true;
 		for(let opt of searchTerm.options)
-			if(row.entity.genres.indexOf(opt) == -1)
+			if(row.entity[column].indexOf(opt) == -1)
 			{
 				ok = false;
 				break;
@@ -1181,8 +1232,8 @@ DataGridController.prototype.genreFilter = function(exclude, searchTerm, cellVal
 	else
 	{
 		ok = false;
-		for(let genre of row.entity.genres)
-			if(searchTerm.options.indexOf(genre) != -1)
+		for(let val of row.entity[column])
+			if(searchTerm.options.indexOf(val) != -1)
 			{
 				ok = true;
 				break;
@@ -1209,7 +1260,7 @@ DataGridController.prototype.osFilter = function(searchTerm, cellValue, row)
 {
 	if(!searchTerm || !searchTerm.length)
 		return true;
-	return row.entity.worksOn[searchTerm];
+	return row.entity[searchTerm];
 }
 
 DataGridController.prototype.baseVisibility = function()
@@ -1238,7 +1289,7 @@ DataGridController.prototype.baseVisibility = function()
 			tabCheck = e=>!e.inBlacklist;
 			break;
 	}
-	this.data = this.fullData.filter(e=>(!this.hideDLC || e.type!=3) && (!this.hideOwned || !e.owned) && tabCheck(e));
+	this.data = this.fullData.filter(e=>(!this.hideDLC || !e.dlc) && (!this.hideOwned || !e.owned) && tabCheck(e));
 };
 
 DataGridController.prototype.toggleCart = function(entry)
@@ -1517,7 +1568,7 @@ DataGridController.prototype.restorePart2 = function(e)
 					throw new Error('wrong filter for '+c.name);
 				else
 				{	
-					if(c.name === 'genre')
+					if(c.name === 'genre' || c.name === 'tag')
 					{
 						for(let subval of val)
 							if(typeof subval !== 'object' ||
@@ -1596,7 +1647,7 @@ startDatagrid = function(\$scope)
 
 var mainMod = !isNew ? 'gog' : 'menuCompanion';
 
-angular.module(mainMod).controller('DataGridController', ['\$scope', '\$http', '\$window', '\$compile', 'cart', !isNew ? 'wishlist' : 'menuWislistClient', DataGridController]);
+angular.module(mainMod).controller('DataGridController', ['\$scope', '\$http', '\$window', '\$compile', 'cart', !isNew ? 'wishlist' : 'menuWislistClient', 'menuBasicUserData', DataGridController]);
 angular.module(mainMod).requires.push('ui.grid');
 angular.module(mainMod).requires.push('ui.grid.autoResize');
 angular.module(mainMod).requires.push('ui.grid.resizeColumns');

@@ -13,6 +13,7 @@ This user script adds a third way to display games in the store view at [https:/
   * Bestselling rank
   * Title
   * Sub-genres
+  * Tags
   * Developer/publisher
   * Release year
   * Operating system(s)
