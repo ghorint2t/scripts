@@ -5,7 +5,7 @@
 // @author       Ghorin
 // @updateURL    https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
 // @downloadURL  https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
-// @version   21
+// @version   22
 // @grant     unsafeWindow
 // @grant     GM_addStyle
 // @match     https://www.gog.com/games*
@@ -1768,7 +1768,7 @@ new MutationObserver(function(mlist, ob)
     {
 		let isNew = false;
         if(n.nodeName == 'SCRIPT' && n.getAttribute('src') && 
-			((isNew = n.getAttribute('src').match('main-es2015')) || 
+			((isNew = n.getAttribute('src').match('main')) || 
 			n.getAttribute('src').match('jsGlobal')))
         {
             n.addEventListener("load", function()
