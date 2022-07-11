@@ -5,7 +5,7 @@
 // @author       Ghorin
 // @updateURL    https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
 // @downloadURL  https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
-// @version   22
+// @version   23
 // @grant     unsafeWindow
 // @grant     GM_addStyle
 // @match     https://www.gog.com/games*
@@ -1564,57 +1564,53 @@ DataGridController.prototype.restorePart2 = function(e)
 		for(let c of this.grid.columns)
 		{
 			if(val = parsed[key = c.name+'_filter'])
-				if(!Array.isArray(val) || val.length < 1)
-					throw new Error('wrong filter for '+c.name);
-				else
+			{
+				let ok = true;
+				if(Array.isArray(val) && val.length >= 1)
 				{	
 					if(c.name === 'genre' || c.name === 'tag')
 					{
 						for(let subval of val)
-							if(typeof subval !== 'object' ||
+							if(subval != null &&
+								(typeof subval !== 'object' ||
 								!Array.isArray(subval.options) ||
 								subval.options.filter(o=>typeof(o) !== 'string').length ||
-								typeof subval.mode?.and !== 'boolean')
-								throw new Error('wrong subfilter for '+c.name);
+								typeof subval.mode?.and !== 'boolean'))
+								ok = false;
 					}
 					else
 						for(let subval of val)
 							if(subval != null && typeof subval !== 'string')
-								throw new Error('wrong subfilter for '+c.name);
-					data[key] = val;
+								ok = false;
+					if(ok)
+						data[key] = val;
 				}
+			}
 			if(val = parsed[key = c.name+'_width'])
 			{
-				if(val !== '*' && typeof val !== 'number')
-					throw new Error('wrong width for '+c.name);
-				data[key] = val;
+				if(val === '*' || typeof val === 'number')
+					data[key] = val;
 			}
 			if(val = parsed[key = c.name+'_sort'])
 			{
-				if(typeof val !== 'object' ||
-					(Object.keys(val).length > 0 &&
-						(typeof val.priority !== 'number' ||
-						(val.direction !== 'asc' && val.direction !== 'desc'))))
-					throw new Error('wrong sort for '+c.name);
-				data[key] = val;
+				if(typeof val === 'object' &&
+					(Object.keys(val).length == 0 ||
+						(typeof val.priority === 'number' &&
+						(val.direction === 'asc' || val.direction === 'desc'))))
+					data[key] = val;
 			}
 			if((val = parsed[key = c.name+'_vis']) !== undefined)
 			{
-				if(typeof val !== 'boolean')
-					throw new Error('wrong vis for '+c.name);
-				data[key] = val;
+				if(typeof val === 'boolean')
+					data[key] = val;
 			}
 		}
 		for(key of ['expanded','hideOwned','hideDLC','showImages'])
 			if((val = parsed[key]) !== undefined)
-				if(typeof val !== 'boolean')
-					throw new Error('wrong value for '+key);
-				else
+				if(typeof val === 'boolean')
 					data[key] = val;
 		if(val = parsed[key = 'blacklist'])
-			if(typeof val !== 'object')
-				throw new Error('wrong blacklist');
-			else
+			if(typeof val === 'object')
 			{
 				for(let subkey in val)
 					if(parseInt(subkey) == NaN || val[subkey] !== true)
