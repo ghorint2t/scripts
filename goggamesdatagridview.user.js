@@ -5,7 +5,7 @@
 // @author       Ghorin
 // @updateURL    https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
 // @downloadURL  https://github.com/ghorint2t/scripts/raw/master/goggamesdatagridview.user.js
-// @version   23
+// @version   24
 // @grant     unsafeWindow
 // @grant     GM_addStyle
 // @match     https://www.gog.com/games*
@@ -921,7 +921,13 @@ class="ui-grid-icon-cancel" ui-grid-one-bind-aria-label="aria.removeFilter">&nbs
 \`<div class="ui-grid-cell-contents datagrid-discount" title="TOOLTIP"><div ng-if="row.entity.discount"><span 
 class="product-tile__discount" ng-if="!row.entity.promoStr">{{row.entity.discountStr}}</span><a
 class="product-tile__discount" href="{{row.entity.promoStr}}" ng-if="row.entity.promoStr" target="_new"
->{{row.entity.discountStr}}</a></div></div>\`
+>{{row.entity.discountStr}}</a></div></div>\`,
+				 menuItems: [ {
+		            title: 'Download Promo IDs',
+		            action: this.downloadPromoIds.bind(this),
+					icon: 'ui-grid-icon-promos',
+		            context: \$scope
+		          } ],
 			}, {
 				name: 'price', 
 				shortDisplayName: 'Price', 
@@ -987,8 +993,8 @@ DataGridController.prototype.start = async function()
 	this.\$scope.\$watch('dg.hideDLC', this.switchChanged.bind(this));
 	this.\$scope.\$watch('dg.hideOwned', this.switchChanged.bind(this));
 
-	var allGames = await this.getGames('//catalog.gog.com/v1/catalog?order=desc%3Abestselling&productType=in%3Agame%2Cpack%2Cdlc%2Cextras&'+this.localeArgs);
-	var newGames = await this.getGames('//catalog.gog.com/v1/catalog?order=desc%3Abestselling&productType=in%3Agame%2Cpack%2Cdlc%2Cextras&releaseStatuses=in%3Anew-arrival&'+this.localeArgs);
+	var allGames = await this.getGames('//catalog.gog.com/v1/catalog?order=desc%3Abestselling&productType=in%3Agame%2Cpack%2Cdlc%2Cextras&limit=100&'+this.localeArgs);
+	var newGames = await this.getGames('//catalog.gog.com/v1/catalog?order=desc%3Abestselling&productType=in%3Agame%2Cpack%2Cdlc%2Cextras&releaseStatuses=in%3Anew-arrival&limit=100&'+this.localeArgs);
 	if(isNew)
 		this.wishlistUpdate(null);
 
@@ -1012,8 +1018,6 @@ DataGridController.prototype.getGames = async function(url)
 	var me = this;
 	var games;
 
-	url += '&limit=100';
-
 	try
 	{
 		games = await this.\$http.get(\`\${url}&page=1\`);
@@ -1022,7 +1026,7 @@ DataGridController.prototype.getGames = async function(url)
 	{
 		return [];
 	}
-	var pages = games.data.pages;
+	var pages = games.data.totalPages || games.data.pages;
 	var allGames = new Array(pages);
 	allGames[0] = games.data.products;
 	var retries = 0, done = 1;
@@ -1109,8 +1113,6 @@ DataGridController.prototype.dataMod = function(entry)
 	entry.tagStr = entry.tags.join(', ');
 	entry.discount = !entry.price?.discount ? 0 : -parseInt(entry.price.discount.replace('%',''));
 	entry.discountStr = entry.price?.discount;
-	if(entry.price?.promoId && entry.price?.promoId.length)
-		entry.promoStr = "/promo/"+entry.price.promoId;
 	entry.os = 0;
 	if(entry.Windows = entry.operatingSystems.indexOf('windows')>-1)
 		entry.os += 4;
@@ -1451,6 +1453,31 @@ DataGridController.prototype.toggleImages = function(\$event)
 	this.baseVisibility();
 };
 
+DataGridController.prototype.downloadPromoIds = async function(\$event)
+{
+	if(this.promoIds || !this.fullData)
+		return;
+	var ids = {};
+	var data = await this.getGames('/games/ajax/filtered?mediaType=game&price=discounted');
+
+	for(let oldEntry of data)
+	{
+		let promoId = oldEntry.price?.promoId;
+		if(promoId && promoId.length)
+			ids[oldEntry.id+''] = promoId;
+	}
+
+	for(let newEntry of this.fullData)
+	{
+		let promoId = ids[newEntry.id];
+		if(promoId)
+			newEntry.promoStr = "/promo/"+promoId;
+	}
+	this.grid.refresh();
+
+	this.promoIds = true;
+};
+
 
 DataGridController.prototype.expandSaveData = function()
 {
@@ -1679,6 +1706,7 @@ var gridctrlcss = `
 .ui-grid-icon-cancel::before { font-family:'gog-icons';content:'\\f00d';}
 .ui-grid-icon-ok::before { font-family:'gog-icons';content:'\\e60c';font-size:0.7em;}
 .ui-grid-icon-menu::before { font-family:'gog-icons';content:'\\e018';}
+.ui-grid-icon-promos::before { font-weight;bold;content:'\\2913';}
 .ui-grid-row { fill: #212121; }
 .ui-grid-filter-input { font-size: 0.9em; }
 .ui-grid-filter-container .ui-grid-filter-button [class^="ui-grid-icon"] { margin-top: -15px; right: 2px; }

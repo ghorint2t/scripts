@@ -61,6 +61,11 @@ Bestselling rank checking:
 Thumbnail images:
 ![](https://github.com/ghorint2t/scripts/raw/master/doc/img/colors.jpg "Colors")
 
+Promo IDs:
+With their switch to a new catalog page and API (and inclusion of tags), GOG removed promo ID codes from API results. With the script now using the new API, promo ID links on discounted games are not available by default.  However, as the old API is still active, it is possible to download the old data containing promo IDs manually. A button for that is available in the 'Discount' column menu. After pressing it, all discount values in the grid should change into active links to the games' respective promo pages. 
+![](https://github.com/ghorint2t/scripts/raw/master/doc/img/promo_ids.jpg "Promo IDs download")
+
+
 ## Notes
 
 It is possible for the catalogue data download to cause the infamous 'wrong gog_lc cookie' (aka. 'Why my gog page is now in different language/currency?!?') bug. If that happens, add something to cart, go to checkout and back to fix. Or, if you are savvy with your browser's developer tools, manually edit gog_lc cookie to a correct value.
