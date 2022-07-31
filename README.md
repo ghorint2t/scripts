@@ -8,7 +8,7 @@ This user script adds a third way to display games in the store view at [https:/
 
 ## Features
 
-- Displays all games in a single grid (no more pages!) 
+- Displays all games in a single grid (no more pages!)
 - Sorting and filtering by (in any combination):
   * Bestselling rank
   * Title
